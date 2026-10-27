@@ -1,0 +1,1467 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Expediente Éxito–D1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<style>
+/* Layout: expediente por capítulos. HUD fijo arriba, escena central que crece paso a paso, barra de navegación abajo. Preguntas emergen como ventanas modales. */
+:root{
+  --bg:#060A1C; --panel:#101A44; --panel2:#17235A; --line:rgba(140,170,255,.2);
+  --ink:#F1F4FF; --mute:#A9B4E0; --dim:#7280B4;
+  --cyan:#3CC8FF; --amber:#FFB547; --violet:#8B5CF6;
+  --risk:#FF5470; --ok:#5BF0A8; --warn:#FFC857; --lime:#B8F34A;
+  --f-display:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 var(--f-body);color:var(--ink);background-color:var(--bg);
+  background-image:radial-gradient(900px 520px at 0% 0%,rgba(30,200,230,.15),transparent 60%),radial-gradient(900px 620px at 100% 8%,rgba(80,110,255,.18),transparent 60%);
+  background-attachment:fixed;min-height:100vh;font-variant-numeric:tabular-nums;overflow-x:hidden}
+body.modal{overflow:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.7}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;line-height:1.15;text-wrap:balance}
+h2{font-size:clamp(26px,4.6vw,44px);font-weight:700}
+h3{font-size:clamp(17px,2.4vw,22px);font-weight:700}
+p{margin:0}
+.muted{color:var(--mute)}
+.kicker{font:600 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+b,strong{font-weight:700}
+
+/* HUD */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(6,10,28,.84);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hud-in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));max-width:1240px;margin:0 auto}
+.brand{display:flex;flex-direction:column;line-height:1.2}
+.brand b{font:700 13px var(--f-display)}
+.brand span{font:400 11px var(--f-mono);color:var(--dim);letter-spacing:.08em}
+.pills{display:flex;gap:6px;align-items:center;flex:1;min-width:0;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 7px;cursor:pointer;color:var(--mute);font:600 12px var(--f-body)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+.pill span{display:none}
+.pill.vis i{background:var(--cyan)}
+.pill.on{white-space:nowrap;padding:5px 12px 5px 9px;color:var(--ink);border-color:var(--cyan);background:rgba(60,200,255,.12)}
+.pill.on span{display:inline}
+.hud-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.year{font:800 24px var(--f-display);color:var(--ink);min-width:3.4ch;text-align:right;font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(60,200,255,.55)}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:6px 12px;font:600 12px var(--f-body);cursor:pointer;display:flex;gap:6px;align-items:center}
+.chip b{font-family:var(--f-mono);color:var(--lime)}
+.chip:hover{border-color:var(--cyan)}
+
+/* Stage */
+.stage{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right,0px)) 150px max(16px,env(safe-area-inset-left,0px))}
+.scene{display:none}
+.scene.active{display:block;animation:sceneIn .6s both}
+@keyframes sceneIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.scene>*+*{margin-top:22px}
+.scene [data-step]{display:none;scroll-margin-top:90px;scroll-margin-bottom:120px}
+.scene [data-step].in{display:block;animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.sh{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.beat p{font-size:clamp(17px,2.2vw,21px);line-height:1.6;max-width:62ch}
+.beat p+p{margin-top:12px;color:var(--mute)}
+.beat p b{color:var(--cyan)}
+.panel{background:linear-gradient(180deg,rgba(23,35,90,.78),rgba(16,26,68,.78));border:1px solid var(--line);border-radius:16px;padding:clamp(16px,3vw,26px)}
+.panel>*+*{margin-top:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.grid3>*{min-width:0}
+.card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h4{font:700 15px var(--f-display);margin-bottom:8px}
+.card p{font-size:14px;color:var(--mute)}
+.card svg{width:34px;height:34px;stroke:var(--cyan);fill:none;stroke-width:1.6;margin-bottom:10px}
+.concept{border:1px solid rgba(184,243,74,.45);border-radius:16px;padding:20px;background:linear-gradient(180deg,rgba(184,243,74,.08),rgba(184,243,74,.02))}
+.concept>*+*{margin-top:12px}
+.concept .tag{font:600 11px var(--f-mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase}
+.memo{font-family:var(--f-mono);font-size:14px;border:1px dashed var(--dim);border-radius:10px;padding:16px;background:rgba(0,0,0,.25);color:var(--mute);position:relative}
+.memo b{color:var(--warn);display:block;font-size:11px;letter-spacing:.14em;margin-bottom:8px}
+.pipe,.chain{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.pipe span,.chain .c{flex:1 1 140px;min-width:0;background:rgba(60,200,255,.1);border:1px solid rgba(60,200,255,.35);border-radius:12px;padding:12px 14px;font-weight:600;font-size:14px;text-align:center}
+.chain .c{opacity:.3;text-align:left}
+.chain .c small{display:block;font-weight:400;color:var(--mute);margin-top:4px;font-size:12px}
+.in .chain .c{animation:lit .7s forwards}
+.in .chain .c:nth-child(1){animation-delay:.3s}.in .chain .c:nth-child(2){animation-delay:1.3s}.in .chain .c:nth-child(3){animation-delay:2.3s}
+@keyframes lit{to{opacity:1;border-color:var(--cyan);box-shadow:0 0 22px rgba(60,200,255,.35)}}
+.in .chain .c:nth-child(3){--x:1}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+.hero h1{font-size:clamp(40px,7vw,84px);font-weight:800;letter-spacing:-.02em;animation:focus 1.4s both}
+.hero h1 .vs{display:block;font-size:.34em;color:var(--amber);font-weight:500;letter-spacing:.08em;margin:6px 0}
+@keyframes focus{from{filter:blur(14px);opacity:0}to{filter:none;opacity:1}}
+.sub{font-size:clamp(16px,2vw,20px);color:var(--mute);margin-top:18px;max-width:46ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chips span{font:500 11px var(--f-mono);border:1px solid var(--line);padding:5px 10px;border-radius:999px;color:var(--mute)}
+.radar{width:100%;max-width:420px;justify-self:center}
+.radar .big{fill:rgba(139,92,246,.16);stroke:rgba(139,92,246,.65)}
+.radar text{font:500 10px var(--f-mono);fill:var(--mute)}
+.pingc{transform-box:fill-box;transform-origin:center;animation:ping 2s infinite;fill:none;stroke:var(--cyan)}
+@keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(7);opacity:0}}
+@media(max-width:760px){.hero{grid-template-columns:1fr}}
+
+/* Map */
+.map{margin:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:rgba(6,10,28,.6)}
+.map svg{display:block;width:100%;height:auto}
+.map .hyp circle{fill:rgba(139,92,246,.16);stroke:rgba(139,92,246,.6)}
+.map text{font:500 11px var(--f-mono);fill:var(--mute)}
+.map figcaption{font:400 11px var(--f-mono);color:var(--dim);padding:8px 14px}
+
+/* Buttons */
+.btn{border:0;border-radius:999px;padding:11px 22px;font-weight:700;cursor:pointer;background:var(--cyan);color:#04102a}
+.btn:hover:not(:disabled){filter:brightness(1.12)}
+.btn:disabled,.btn[aria-disabled=true]{background:rgba(255,255,255,.1);color:var(--dim);cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.sm{padding:7px 14px;font-size:13px}
+.btn.pulse{animation:pulse 1.2s 2}
+@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(60,200,255,.25)}}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(6,10,28,.88);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
+.prog{flex:1;display:flex;gap:4px;align-items:center;justify-content:center;min-width:0}
+.prog i{height:5px;flex:1;max-width:34px;border-radius:3px;background:rgba(255,255,255,.14)}
+.prog i.on{background:var(--cyan)}
+
+/* Pop question */
+.scene .pop{position:fixed;inset:0;z-index:60;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:rgba(4,7,22,.74);backdrop-filter:blur(6px);place-items:center}
+.scene .pop.in{display:grid;animation:fadeIn .3s both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.pop-card{width:min(660px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,#1a2866,#0f1a48);border:1px solid var(--amber);border-radius:20px;padding:clamp(18px,3vw,28px);box-shadow:0 0 60px rgba(255,181,71,.28);animation:popIn .5s cubic-bezier(.2,1.3,.3,1) both}
+@keyframes popIn{from{transform:scale(.8) translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.pop-card>*+*{margin-top:14px}
+.pop .tag{font:600 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:8px}
+.pop .tag i{width:8px;height:8px;border-radius:50%;background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;line-height:1.45}
+.opt:hover:not(:disabled){border-color:var(--cyan)}
+.opt .k{font:600 13px var(--f-mono);color:var(--cyan);padding-top:1px}
+.opt.ok{border-color:var(--ok);background:rgba(91,240,168,.12)}
+.opt.bad{border-color:var(--risk);background:rgba(255,84,112,.12)}
+.opt:disabled{cursor:default;opacity:.7}
+.fb{display:none;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+.fb.show{display:block;animation:rise .4s both}
+.fb.ok{background:rgba(91,240,168,.12);border:1px solid rgba(91,240,168,.45)}
+.fb.bad{background:rgba(255,84,112,.12);border:1px solid rgba(255,84,112,.45)}
+.pop-foot{display:flex;justify-content:flex-end;gap:10px}
+
+/* Classifier */
+.cl-list{display:grid;gap:12px}
+.cl-row{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.cl-row p:first-child{font-size:15px}
+.cl-btns{display:flex;gap:6px;flex-wrap:wrap}
+.cl-btns button{border:1px solid var(--line);background:rgba(255,255,255,.05);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.cl-btns button:hover:not(:disabled){border-color:var(--cyan)}
+.cl-btns button.bad{border-color:var(--risk);color:var(--risk);animation:shake .35s}
+.cl-btns button.ok{border-color:var(--ok);background:rgba(91,240,168,.14);color:var(--ok)}
+.cl-row.done .cl-btns button:not(.ok){opacity:.35}
+.cl-fb{grid-column:1/-1;font-size:13px;color:var(--ok);display:none}
+.cl-row.done .cl-fb{display:block}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@media(max-width:640px){.cl-row{grid-template-columns:1fr}}
+
+/* Matrix */
+.mxbody{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:760px){.mxbody{grid-template-columns:1fr}}
+.mxframe{display:grid;grid-template-columns:22px 44px minmax(0,1fr);grid-template-rows:auto 24px 20px}
+.ylab{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font:600 11px var(--f-mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.yt{display:flex;flex-direction:column;justify-content:space-around;font:500 11px var(--f-mono);color:var(--mute);text-align:right;padding-right:6px}
+.xt{grid-column:3;display:flex;justify-content:space-around;font:500 11px var(--f-mono);color:var(--mute);padding-top:4px}
+.xlab{grid-column:3;text-align:center;font:600 11px var(--f-mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.mxgrid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;aspect-ratio:4/3;grid-column:3;grid-row:1}
+.cell{border:0;border-radius:8px;cursor:pointer;transition:filter .2s}
+.cell:hover{filter:brightness(1.5)}
+.bub{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 10px var(--f-mono);background:rgba(255,255,255,.85);color:#0a1030;pointer-events:none;transition:left .45s,top .45s}
+.bub.me{width:44px;height:44px;background:var(--cyan);font-size:13px;z-index:3;box-shadow:0 0 0 0 rgba(60,200,255,.7);animation:halo 1.8s infinite}
+@keyframes halo{70%{box-shadow:0 0 0 16px rgba(60,200,255,0)}}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:13px;color:var(--mute)}
+.legend b{font-family:var(--f-mono);color:var(--ink);margin-right:6px}
+.verdict{padding:14px;border-radius:12px;background:rgba(255,200,87,.1);border:1px solid rgba(255,200,87,.4);font-size:15px}
+.timebox{display:grid;gap:14px}
+.bigyear{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.bigyear b{font:800 clamp(40px,8vw,72px) var(--f-display);font-variant-numeric:tabular-nums}
+.stagechip{font:600 13px var(--f-mono);padding:5px 12px;border-radius:999px;border:1px solid var(--cyan);color:var(--cyan)}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stages>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;color:var(--dim);transition:.3s}
+.stages>div.on{color:var(--ink);border-color:var(--cyan);background:rgba(60,200,255,.1)}
+.stages b{display:block;font-size:13px;margin-bottom:2px}
+@media(max-width:560px){.stages{grid-template-columns:1fr}}
+
+/* Sim */
+.simgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:22px}
+@media(max-width:800px){.simgrid{grid-template-columns:1fr}}
+.ctl{display:grid;gap:4px;font-size:14px}
+.ctl label{display:flex;justify-content:space-between;gap:8px;color:var(--mute)}
+.ctl output{font:600 13px var(--f-mono);color:var(--cyan)}
+.ctls{display:grid;gap:16px;align-content:start}
+.hist{position:relative;display:flex;align-items:flex-end;gap:2px;height:190px;border-bottom:1px solid var(--line);padding-top:8px}
+.bar{flex:1;background:linear-gradient(180deg,var(--violet),rgba(139,92,246,.4));border-radius:3px 3px 0 0;height:2%;transition:height .35s;min-width:0}
+.bar.zero{background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.12));position:relative}
+.bar.zero::after{content:attr(data-l);position:absolute;top:6px;left:50%;transform:translateX(-50%);font:600 10px var(--f-mono);color:#0a1030}
+.vline{position:absolute;top:0;bottom:0;width:2px;transition:left .35s}
+.vline.v{background:var(--warn)}.vline.p{background:var(--risk)}
+.vline span{position:absolute;top:-2px;left:4px;font:600 10px var(--f-mono);white-space:nowrap}
+.vline.v span{color:var(--warn)}.vline.p span{color:var(--risk);top:14px}
+.hax{display:flex;justify-content:space-between;gap:6px;font:400 10px var(--f-mono);color:var(--dim);margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.kpi{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04)}
+.kpi small{display:block;color:var(--mute);font-size:11px}
+.kpi b{font:700 22px var(--f-display);font-variant-numeric:tabular-nums}
+.read{padding:12px 14px;border-radius:12px;background:rgba(60,200,255,.08);border:1px solid rgba(60,200,255,.3);font-size:14px}
+.mit{display:grid;gap:10px}
+.mit label{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:14px}
+.mit input{margin-top:4px;accent-color:var(--lime);width:18px;height:18px}
+.mit small{display:block;color:var(--mute)}
+.mit em{font:600 12px var(--f-mono);color:var(--lime);font-style:normal;margin-left:auto;white-space:nowrap}
+.cbbars{display:grid;gap:8px}
+.cbbar{display:grid;grid-template-columns:130px 1fr 60px;gap:10px;align-items:center;font-size:13px}
+.cbbar div{height:14px;border-radius:7px;background:var(--risk);transition:width .4s;min-width:2px}
+.cbbar.n div{background:var(--ok)}
+.net{font:700 20px var(--f-display)}
+.net.neg{color:var(--risk)}.net.pos{color:var(--ok)}
+
+/* Supply */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 16px;cursor:pointer;font-weight:600;font-size:14px}
+.seg button.on{background:var(--cyan);color:#04102a}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.sc svg{width:100%;height:auto;display:block}
+.sc .sup{cursor:pointer}
+.sc .sup circle{fill:#16246a;stroke:var(--cyan);stroke-width:2}
+.sc .sup.down circle{fill:rgba(255,84,112,.3);stroke:var(--risk)}
+.sc .sup.off{opacity:.3;cursor:default}
+.sc text{font:600 12px var(--f-mono);fill:var(--ink)}
+.sc .lbl{font-weight:400;fill:var(--mute);font-size:10.5px}
+.fl{fill:none;stroke-dasharray:7 9;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+.fl.stop{animation:none;stroke:var(--risk)!important;stroke-dasharray:3 6;opacity:.7}
+.big2{font:800 clamp(30px,6vw,52px) var(--f-display);font-variant-numeric:tabular-nums}
+
+/* Race */
+.lane{display:grid;gap:6px}
+.lane h4{font:600 13px var(--f-body);color:var(--mute)}
+.track{position:relative;height:56px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.gate{position:absolute;top:6px;bottom:6px;width:2px;background:var(--dim)}
+.gate span{position:absolute;top:100%;left:50%;transform:translateX(-50%);font:500 10px var(--f-mono);color:var(--dim);white-space:nowrap;margin-top:2px}
+.gate.pass{background:var(--ok)}
+.tok{position:absolute;top:50%;left:0;width:22px;height:22px;border-radius:50%;background:var(--cyan);transform:translate(-50%,-50%);box-shadow:0 0 16px var(--cyan)}
+.lane.agile .tok{background:var(--lime);box-shadow:0 0 16px var(--lime)}
+.lres{font:500 12px var(--f-mono);color:var(--mute);margin-top:18px}
+.chipl{display:flex;flex-wrap:wrap;gap:8px}
+.chipl span{padding:6px 12px;border-radius:999px;border:1px solid rgba(184,243,74,.5);font-size:13px;color:var(--lime)}
+
+/* Budget */
+.bud{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px}
+@media(max-width:800px){.bud{grid-template-columns:1fr}}
+.lev{display:grid;gap:3px;margin-bottom:14px}
+.lev label{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600}
+.lev small{color:var(--mute);font-size:12px}
+.lev output{font:600 13px var(--f-mono);color:var(--cyan)}
+.pts{font:700 14px var(--f-mono);color:var(--lime)}
+.shock{display:grid;gap:5px;margin-bottom:12px;font-size:13px}
+.shock div{height:16px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
+.shock i{display:block;height:100%;width:0;border-radius:8px;transition:width .4s,background .4s}
+.shock span{display:flex;justify-content:space-between}
+
+/* Final */
+.tl{display:grid;gap:14px}
+.tlr{display:grid;grid-template-columns:minmax(110px,max-content) minmax(0,1fr);gap:8px 24px;align-items:start}
+.tlr .y{font:800 22px var(--f-display);color:var(--cyan);line-height:1.3}
+.huge{font:800 clamp(48px,11vw,112px) var(--f-display);line-height:1.05;margin-bottom:8px;color:var(--amber);text-shadow:0 0 40px rgba(255,181,71,.5)}
+.quote{border-radius:18px;padding:clamp(20px,4vw,34px);background:linear-gradient(135deg,rgba(60,200,255,.16),rgba(139,92,246,.2));border:1px solid var(--line);font:600 clamp(18px,3vw,28px)/1.4 var(--f-display)}
+textarea{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--ink);padding:12px;font:inherit;resize:vertical}
+.sumg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.refs{font-size:12px;color:var(--dim)}
+@media(max-width:560px){.tlr{grid-template-columns:1fr;gap:4px}}
+
+/* Drawer & toast */
+.drawer{position:fixed;top:0;right:0;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(400px,100%);z-index:70;background:#0c1438;border-left:1px solid var(--line);padding:max(18px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) 18px 18px;overflow:auto;transform:translateX(105%);visibility:hidden;transition:transform .3s,visibility 0s .3s}
+.drawer.open{transform:none;visibility:visible;transition:transform .3s,visibility 0s}
+.drawer h3{margin-bottom:12px}
+.drawer>*+*{margin-top:12px}
+.dc{padding:12px;border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--mute)}
+.dc b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+.dc small{font:400 10px var(--f-mono);color:var(--lime)}
+.dc.lock{opacity:.4}
+.dc.lock p{filter:blur(4px);user-select:none}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:80;background:var(--lime);color:#13210a;font-weight:700;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.35s;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){.gate span{display:none}}
+@media(max-width:700px){.pills{flex:1 1 100%;order:3;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.pill{flex:none}}
+@media(max-width:640px){.brand{display:none}.hud-r{margin-left:0;width:100%;justify-content:space-between}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}}
+
+/* ---- v3: portada centrada, cabeceras, evaluación ---- */
+:root{--wrap:1120px}
+.hud-in,.nav-in,.stage{max-width:var(--wrap)}
+.scene>*+*{margin-top:26px}
+.cv{position:relative;display:grid;place-items:center;text-align:center;min-height:min(620px,calc(100svh - 230px));padding:24px 0 8px}
+.cv::before{content:"";position:absolute;inset:0;background:radial-gradient(closest-side at 50% 50%,rgba(6,10,28,.8),transparent 88%);z-index:0}
+.bgradar{position:absolute;left:50%;top:50%;width:min(700px,98vw);max-width:none;transform:translate(-50%,-50%);opacity:.45;z-index:0}
+.cv-in{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:22px;max-width:780px}
+.cv h1{font-size:clamp(46px,10vw,112px);font-weight:800;letter-spacing:-.025em;line-height:1;animation:focus 1.4s both}
+.cv h1 .vs{display:inline;font-size:.34em;color:var(--amber);font-weight:600;letter-spacing:.06em;margin:0 .4em;vertical-align:.45em}
+.cv .sub{margin:0;max-width:34ch;font-size:clamp(17px,2.2vw,22px);color:var(--mute)}
+.cv .chips{justify-content:center;margin:0}
+.author{display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:20px;margin-top:6px;border-top:1px solid var(--line);min-width:min(440px,100%);text-align:center}
+.author b{font-size:18px;font-weight:700}
+.author span{font-size:14px;color:var(--cyan);font-weight:500}
+.author small{font-size:12px;color:var(--mute);letter-spacing:.05em}
+.sh{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 22px;align-items:center;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sh .num{grid-row:1/3;font:800 clamp(56px,9vw,92px)/1 var(--f-display);color:transparent;-webkit-text-stroke:1.5px var(--cyan);min-width:.75em;text-align:center}
+.sh .kicker{align-self:end}.sh h2{align-self:start}
+.prog{flex-direction:column;gap:6px}
+.prog .pt{font:600 12px var(--f-body);color:var(--mute);letter-spacing:.04em;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.prog .dots{display:flex;gap:4px;width:100%;justify-content:center}
+.qz>*+*{margin-top:16px}
+.qz-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--mute)}
+.qz-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+.qz-bar i{display:block;height:100%;background:var(--cyan);transition:width .4s}
+.qz-tag{font:600 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+.qz-q{font:700 clamp(18px,2.6vw,24px)/1.35 var(--f-display)}
+.nota{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+.ring{width:176px;height:176px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:12;stroke-linecap:round}
+.ring .tr{stroke:rgba(255,255,255,.1)}.ring .fg{stroke:var(--cyan);transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+.ring b{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font:800 42px/1 var(--f-display)}
+.ring b small{display:block;font:500 12px var(--f-body);color:var(--mute);margin-top:4px}
+.lvl{font:800 clamp(22px,3.4vw,32px) var(--f-display);color:var(--amber)}
+.rev{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.rev div{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;color:var(--mute)}
+.rev div.y{border-color:rgba(91,240,168,.5)}.rev div.n{border-color:rgba(255,84,112,.5)}
+.rev b{color:var(--ink);min-width:1.6em}
+.nm{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.nm input{flex:1;min-width:200px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--ink);padding:11px 18px;font:inherit}
+.row2{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:640px){.nota{grid-template-columns:1fr;justify-items:center;text-align:center}.sh .num{font-size:48px}}
+
+/* ---- v4: una pantalla por paso ---- */
+.scene.active{min-height:calc(100svh - 215px);display:flex;flex-direction:column;justify-content:flex-start;gap:0}
+.scene>*+*{margin-top:0}
+.scene [data-step].in:not(.pop){animation:slideIn .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+.crumb{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;padding-bottom:14px;margin-bottom:28px;border-bottom:1px solid var(--line);font:600 12px var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+.crumb span{color:var(--mute);letter-spacing:.04em;text-transform:none;font-size:14px;font-weight:500}
+.scene.is-title .crumb{display:none}
+.scene .sh[data-step]{display:none}
+.scene .sh[data-step].in{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;border:0;padding:0;margin:0}
+.sh .num{grid-row:auto;font-size:clamp(100px,18vw,190px);min-width:0;-webkit-text-stroke:2px var(--cyan);margin-bottom:-6px}
+.sh h2{font-size:clamp(34px,6vw,68px);max-width:16ch}
+.sh .kicker{font-size:13px}
+.sh .subt{font-size:clamp(17px,2.2vw,22px);color:var(--mute);max-width:36ch;margin-top:6px}
+.scene .cv[data-step]{display:none}
+.scene .cv[data-step].in{display:grid}
+.slide>*+*{margin-top:26px}
+.beat{text-align:center;max-width:860px;margin:0 auto}
+.beat p{font-size:clamp(20px,2.8vw,30px);line-height:1.5;max-width:none}
+.memo{max-width:780px;margin:0 auto;font-size:clamp(16px,2vw,20px);padding:clamp(20px,4vw,36px);line-height:1.6}
+.memo b{font-size:12px}
+.concept{max-width:960px;margin:0 auto;width:100%}
+.tl{max-width:900px;margin:0 auto;width:100%}
+.quote{max-width:900px;margin:0 auto;text-align:center}
+.slide .beat{margin-top:26px}
+.scene [data-step].in:not(.pop){margin-top:auto;margin-bottom:auto;width:100%}
+.scene .grid3[data-step].in{display:grid}
+.scene .sh[data-step].in{margin:auto}
+.scene .cv[data-step].in{margin:auto}
+.map{max-width:720px;margin-left:auto;margin-right:auto}
+.toast{bottom:auto;top:66px;transform:translate(-50%,-12px)}
+.toast.show{transform:translate(-50%,0)}
+.grid3.rules{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.grid3.rules .card{padding:24px}
+@media(max-width:760px){.grid3.rules{grid-template-columns:1fr}}
+.panel.topic{max-width:980px;margin-left:auto;margin-right:auto}
+.pipe.steps4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.pipe.steps4 .st{background:rgba(60,200,255,.08);border:1px solid rgba(60,200,255,.3);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.pipe.steps4 .st i{font-style:normal;font-weight:800;font-size:13px;width:28px;height:28px;border-radius:50%;background:var(--cyan);color:#06142a;display:grid;place-items:center}
+.pipe.steps4 .st b{font-size:15px}
+.pipe.steps4 .st span{font-size:13px;line-height:1.5;color:var(--mute);font-weight:500}
+@media(max-width:860px){.pipe.steps4{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.pipe.steps4{grid-template-columns:1fr}}
+.pipe.steps4 .st span{flex:none;background:none;border:0;padding:0;border-radius:0;text-align:left}
+.scene .sh.in .kicker,.scene .sh.in h2,.scene .sh.in .subt,.scene .sh.in .num{align-self:center;text-align:center;margin-left:auto;margin-right:auto}
+.scene .sh.in h2{max-width:18ch}
+.scene .sh.in .kicker{letter-spacing:.16em;margin-top:6px}
+.scene .sh.in .subt{margin-top:10px}
+.crumb{justify-content:center;text-align:center}
+.cl-row{display:none}.cl-row.cur{display:grid;animation:slideIn .35s both}
+.cl-row p:first-child{font-size:clamp(16px,2vw,19px);grid-column:1/-1}
+.cl-btns{grid-column:1/-1}
+.cl-btns button{padding:9px 16px;font-size:14px}
+.cl-fb{min-height:0}
+.cl-next{grid-column:1/-1;justify-self:end}
+.cl-prog{font:700 12px var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin:6px 0 10px}
+.mxbody{align-items:center}
+.mxframe{max-width:560px}
+.mxside{display:grid;gap:12px;align-content:center}
+.mxside .timebox{gap:10px}
+.mxside .bigyear b{font-size:clamp(36px,5vw,52px)}
+.mxside .stages{grid-template-columns:1fr;gap:6px}
+.mxside .stages>div{padding:7px 12px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.mxside .stages b{margin:0}
+.mxside .verdict{font-size:14px;padding:12px}
+#mxp:has(#timebox:not([hidden])) > .muted{display:none}
+#mxp:has(#timebox:not([hidden])) > h3{font-size:18px;margin-bottom:10px}
+@media(max-height:800px) and (min-width:761px){
+ .mxgrid{aspect-ratio:2/1}.mxframe{max-width:520px}
+ .crumb{margin-bottom:14px;padding-bottom:10px}
+ .mxside .stages>div{padding:5px 10px}.mxside .bigyear b{font-size:34px}
+ .scene .panel{padding:16px 20px}
+}
+.ch{display:block;font-size:12px;color:var(--dim);margin-top:4px;line-height:1.4}
+.kd{display:block;font-style:normal;font-size:11.5px;line-height:1.4;color:var(--dim);margin-top:6px;font-weight:500}
+#simp .kpi{text-align:left}
+.cbgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:center}
+@media(max-width:760px){.cbgrid{grid-template-columns:1fr}}
+.cbres{display:grid;gap:14px}
+.cbbar.c div{background:var(--amber)}
+.cbverdict{padding:14px 16px;border-radius:12px;font-size:14.5px;line-height:1.55;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.cbverdict.pos{background:rgba(91,240,168,.1);border-color:rgba(91,240,168,.45)}
+.cbverdict.neg{background:rgba(255,181,71,.1);border-color:rgba(255,181,71,.45)}
+.mit em{font-size:12px}
+.cbbar{grid-template-columns:150px minmax(0,1fr) 50px}
+.scgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:center}
+@media(max-width:820px){.scgrid{grid-template-columns:1fr}}
+.scleft{display:grid;gap:8px;min-width:0}
+.scbar{justify-content:space-between}
+.sc svg{max-height:360px}
+.scright{display:grid;gap:14px}
+.scsteps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.scsteps li{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:13.5px;color:var(--mute);transition:.3s}
+.scsteps li i{font-style:normal;font-weight:800;font-size:12px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--mute);flex:none}
+.scsteps li.now{border-color:var(--cyan);color:var(--ink);background:rgba(60,200,255,.08)}
+.scsteps li.now i{border-color:var(--cyan);color:var(--cyan)}
+.scsteps li.ok{border-color:rgba(91,240,168,.5);color:var(--ink)}
+.scsteps li.ok i{background:var(--ok);border-color:var(--ok);color:#06231a;font-size:0}
+.scsteps li.ok i::after{content:"✓";font-size:13px}
+.gauge{padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);display:grid;gap:6px}
+.gauge small{color:var(--mute);font-size:12px}
+.gauge .big2{font-size:clamp(40px,5vw,60px);line-height:1;transition:color .3s}
+.gbar{height:10px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+.gbar i{display:block;height:100%;width:100%;border-radius:6px;transition:width .5s,background .3s}
+.sc .pulse{animation:scp 2s ease-out infinite}
+.sc .sup.down .pulse,.sc .sup.off .pulse{animation:none}
+@keyframes scp{0%{stroke-width:2;stroke-opacity:1}70%{stroke-width:9;stroke-opacity:0}100%{stroke-width:2;stroke-opacity:0}}
+.sc text{font-size:15px}.sc .lbl{font-size:13px}
+.lh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cnt{font-size:13px;color:var(--mute)}.cnt b{font:800 26px var(--f-display);color:var(--amber);margin-right:4px;font-variant-numeric:tabular-nums}
+.lane.agile .cnt b{color:var(--lime)}
+#rcp .lane{margin-top:6px}
+#rcp .lres{margin-top:16px;min-height:16px}
+.rcctl{align-items:flex-end;margin-bottom:6px}
+.bdtop{align-items:center;margin-bottom:10px}.bdtop .sp{flex:1}
+.pts b{color:var(--lime)}
+.bres{display:grid;gap:14px;justify-items:center;align-content:center}
+.ringwrap{position:relative;width:min(200px,60%);aspect-ratio:1}
+.ringwrap .ring{width:100%;height:100%}
+.rbg{fill:none;stroke:rgba(255,255,255,.1);stroke-width:12}
+.rfg{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .5s,stroke .3s}
+.rnum{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.rnum b{font:800 clamp(34px,4.4vw,48px) var(--f-display);line-height:1}
+.rnum small{font-size:11px;color:var(--mute);margin-top:4px}
+.shrings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.mini{display:grid;justify-items:center;gap:2px;position:relative}
+.mini svg{width:64px;height:64px}.mini .rbg,.mini .rfg{stroke-width:7}
+.mini b{position:absolute;top:20px;font:700 13px var(--f-display)}
+.mini small{font-size:11px;color:var(--mute);text-align:center}
+.bres .read{width:100%;font-size:13.5px}
+#simp{padding-top:18px;padding-bottom:18px}#simp .hist{height:190px}
+@media(max-height:800px) and (min-width:761px){
+ #simp .hist{height:110px}#simp .ch{display:none}#simp .ctl{gap:2px}
+ #simp>.muted{font-size:14px;margin:4px 0 8px}#simp h3{font-size:18px}
+ #simp .kpi{padding:8px 10px}#simp .kd{font-size:11px;margin-top:3px}#simp .read{padding:8px 12px;font-size:13px}
+ .scene .crumb{margin-bottom:10px}
+}
+.panel.qz{max-width:960px;margin-left:auto;margin-right:auto;width:100%;padding:clamp(20px,3vw,36px)}
+.qz>*+*{margin-top:18px}
+.qz-intro{display:grid;justify-items:center;text-align:center;gap:14px;padding:14px 0}
+.qz-intro>*+*{margin-top:0}
+.qz-intro h3{font-size:clamp(28px,4vw,40px)}
+.qz-intro .muted{max-width:46ch}
+.qz-chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.qz-chips span{padding:8px 16px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--mute);background:rgba(255,255,255,.04)}
+.qz-chips b{color:var(--cyan)}
+.qz-q{font-size:clamp(20px,2.6vw,26px);line-height:1.4;margin-top:24px}
+.qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+@media(max-width:700px){.qz-opts{grid-template-columns:1fr}}
+.qz-opts .opt{height:100%}
+.qz-foot{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-top:20px;min-height:64px}
+.qz-foot .fb{flex:1;margin:0}
+.qz-foot .btn{flex:none}
+@media(max-width:700px){.qz-foot{flex-direction:column;align-items:stretch}}
+.res{display:grid;gap:26px}
+.res>*+*{margin-top:0}
+.res .nota{grid-template-columns:auto minmax(0,1fr);gap:36px}
+.nota .ring{width:170px;height:170px}
+.resx{display:grid;gap:8px}.resx>*{margin:0}
+.resx .lvl{font:800 clamp(26px,3.6vw,38px) var(--f-display)}
+.rstats{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.rstats div{padding:10px 16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04)}
+.rstats b{display:block;font:800 22px var(--f-display)}
+.rstats small{color:var(--mute);font-size:12px}
+.rev{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.rev{grid-template-columns:repeat(2,minmax(0,1fr))}.res .nota{grid-template-columns:1fr;justify-items:center;text-align:center}.rstats{justify-content:center}}
+.rev>div{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:12.5px;line-height:1.3}
+.rev>div b{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px}
+.rev>div.y{border-color:rgba(91,240,168,.45)}.rev>div.y b{background:var(--ok);color:#06231a}
+.rev>div.n{border-color:rgba(255,181,71,.5)}.rev>div.n b{background:var(--amber);color:#2a1800}
+.resfoot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.resfoot .refs{margin:0;max-width:60ch}
+.dd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.dd-head .cl-prog{margin:4px 0 0}
+.dd-stage{display:grid;place-items:center;min-height:112px;margin:14px 0 6px}
+.dd-card{max-width:640px;width:100%;padding:20px 24px;border-radius:16px;background:linear-gradient(180deg,#1d2d78,#16246a);border:1.5px solid var(--cyan);box-shadow:0 10px 36px rgba(60,200,255,.2);font:600 clamp(16px,1.9vw,20px)/1.45 var(--f-body);text-align:center;cursor:grab;touch-action:none;user-select:none;position:relative;z-index:5}
+.dd-card::before{content:"Arrastrar ↓";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font:700 11px var(--f-body);letter-spacing:.12em;text-transform:uppercase;background:var(--cyan);color:#06142a;padding:3px 10px;border-radius:999px}
+.dd-card.drag{cursor:grabbing;box-shadow:0 18px 50px rgba(60,200,255,.4);transition:none}
+.dd-card.sel{outline:3px solid var(--lime)}
+.dd-card:not(.drag){transition:transform .25s}
+.dd-card.pop-in{animation:ddIn .4s both}
+.dd-card.gone{opacity:0;transform:scale(.9);transition:.3s}
+.dd-card.shake{animation:shake .4s}
+@keyframes ddIn{from{opacity:0;transform:translateY(-14px) scale(.96)}to{opacity:1;transform:none}}
+.dd-fb{min-height:22px;text-align:center;font-size:14px;color:var(--mute);margin:6px 0 12px}
+.dd-fb.ok{color:var(--ok)}.dd-fb.bad{color:var(--risk)}
+.dd-zones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:700px){.dd-zones{grid-template-columns:1fr}}
+.dd-zone{min-height:170px;padding:16px;border:2px dashed rgba(140,170,255,.4);border-radius:16px;background:rgba(255,255,255,.03);transition:.2s;display:flex;flex-direction:column;gap:4px}
+.dd-zone h4{font:800 18px var(--f-display)}
+.dd-zone small{color:var(--mute);font-size:12.5px;margin-bottom:8px}
+.dd-zone.over{border-color:var(--cyan);background:rgba(60,200,255,.12);transform:scale(1.02)}
+.dd-zone.hit{border-color:var(--ok);background:rgba(91,240,168,.12)}
+.dd-zone.miss{border-color:var(--risk);background:rgba(255,84,112,.12);animation:shake .4s}
+.dd-chips{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.dd-chip{padding:7px 12px;border-radius:10px;background:rgba(91,240,168,.14);border:1px solid rgba(91,240,168,.45);font-size:13px;font-weight:600;animation:ddIn .35s both}
+.sim3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+@media(max-width:700px){.sim3{grid-template-columns:1fr}}
+.s3{padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left-width:5px;display:grid;gap:2px}
+.s3.g{border-left-color:#8A93B8}.s3.a{border-left-color:var(--warn)}.s3.r{border-left-color:var(--risk)}
+.s3 small{font-size:12.5px;color:var(--mute);font-weight:600}.s3 small em{font-style:normal;font-weight:500;color:var(--dim)}
+.s3 b{font:800 clamp(24px,3vw,32px) var(--f-display);font-variant-numeric:tabular-nums}
+.s3 span{font-size:12.5px;color:var(--mute);line-height:1.4}
+.read:empty{display:none}
+#simp .simgrid{align-items:center}
+.qlgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:22px;align-items:center;margin-top:10px}
+@media(max-width:800px){.qlgrid{grid-template-columns:1fr}}
+.qlside{display:grid;gap:14px}
+.qlexp{display:grid;gap:8px}
+.qle{display:flex;align-items:center;gap:12px;text-align:left;padding:10px 14px;border:1.5px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);cursor:pointer;color:var(--ink);transition:.2s;font-family:inherit}
+.qle:hover{border-color:var(--cyan)}
+.qle.on{border-color:var(--cyan);background:rgba(60,200,255,.12)}
+.qle .av{width:34px;height:34px;border-radius:50%;background:var(--cyan);color:#06142a;display:grid;place-items:center;font-weight:800;flex:none}
+.qle.all .av{background:var(--lime)}
+.qle b{display:block;font-size:15px}.qle small{color:var(--mute);font-size:12.5px}
+.qlhow{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13px;color:var(--mute);line-height:1.45}
+.qlhow b{color:var(--ink)}
+.qlmx{display:grid;gap:12px}
+.qlmx .mxframe{max-width:520px;margin:0 auto;width:100%}
+.bub.ql{width:30px;height:30px;font-size:13px;background:var(--cyan);color:#06142a;transition:none}
+.qlres{padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);display:grid;gap:10px;min-height:120px;align-content:center}
+.qlq{font-size:15px;line-height:1.5;margin:0;font-style:italic}
+.qlr{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--mute)}.qlr b{color:var(--ink)}
+.qlbadge{margin:0;justify-self:start;padding:6px 16px;border-radius:999px;color:#10131f;font-weight:800;font-size:14px}
+.qlbadges{display:flex;gap:8px;flex-wrap:wrap}
+.qlbadges span{padding:5px 12px;border:1.5px solid;border-radius:999px;font-weight:700;font-size:13px}
+.qln{margin:0;font-size:13.5px;color:var(--mute);line-height:1.5}
+.bub[hidden]{display:none}
+.qlbadges{display:flex;flex-wrap:wrap;gap:8px}.qlbadges span{display:inline-flex;gap:6px;align-items:center;flex:none;position:static;margin:0;white-space:nowrap}
+.qlb{display:inline-flex;gap:6px;align-items:center;padding:5px 12px;border:1.5px solid;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap}
+.ctl output{white-space:nowrap;flex:none}
+</style>
+<canvas id="bg" aria-hidden="true"></canvas>
+<header class="hud"><div class="hud-in">
+  <div class="brand"><b>Expediente Éxito–D1</b><span>PENSAMIENTO DISRUPTIVO</span></div>
+  <nav class="pills" id="pills" aria-label="Capítulos"></nav>
+  <div class="hud-r">
+    <div class="year" id="year" aria-label="Año del caso">2009</div>
+    <button class="chip" id="bConc" type="button">Conceptos <b id="cCount">0/12</b></button>
+    <button class="chip" id="bScore" type="button" title="Aciertos a la primera">Aciertos <b id="cScore">0/0</b></button>
+  </div>
+</div></header>
+
+<main class="stage" id="stage">
+
+<!-- ===== CAP 0 ===== -->
+<section class="scene" data-name="Expediente" data-short="Expediente" data-noauto data-cta="Abrir expediente">
+  <div class="cv" data-step>
+    <svg class="radar bgradar" viewBox="0 0 400 400" aria-hidden="true">
+      <defs><linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3CC8FF" stop-opacity="0"/><stop offset="1" stop-color="#3CC8FF" stop-opacity=".5"/></linearGradient></defs>
+      <g fill="none" stroke="rgba(120,190,255,.28)"><circle cx="200" cy="200" r="190"/><circle cx="200" cy="200" r="140"/><circle cx="200" cy="200" r="90"/><circle cx="200" cy="200" r="40"/><path d="M10 200H390M200 10V390"/></g>
+      <path d="M200 200 L200 10 A190 190 0 0 1 335 65 Z" fill="url(#sw)"><animateTransform attributeName="transform" type="rotate" from="0 200 200" to="360 200 200" dur="7s" repeatCount="indefinite"/></path>
+      <circle class="pingc" cx="352" cy="262" r="4"/><circle cx="352" cy="262" r="4" fill="#3CC8FF"/>
+    </svg>
+    <div class="cv-in">
+      <p class="kicker">Pensamiento Disruptivo · Especialización en Inteligencia de Negocios</p>
+      <h1>Éxito<span class="vs">vs.</span>D1</h1>
+      <p class="sub">En quince años, el líder del retail colombiano cambió de dueño. ¿Alguien pudo verlo venir?</p>
+      <div class="chips"><span>Expediente confidencial · Comité de Riesgos</span><span>Evaluación del riesgo de interrupción</span></div>
+      <div class="author"><b>Andrés Julián Escobar Cardona</b><span>andres_escobar@cun.edu.co</span><small>Docente · Corporación Unificada Nacional de Educación Superior (CUN)</small></div>
+    </div>
+  </div>
+  <div class="beat" data-step><p>Hoy es <b>2009</b>. Ustedes son el Comité de Riesgos de Grupo Éxito, el líder del retail colombiano.</p><p>La agenda de la mañana tiene un solo punto: qué podría interrumpir el negocio y qué hacer antes de que ocurra.</p></div>
+  <div class="panel topic" data-step data-unlock="evaluacion">
+    <p class="kicker">El tema de hoy</p>
+    <h3>Evaluación del riesgo de interrupción</h3>
+    <p class="muted">Es el proceso con el que una organización <b>identifica, analiza y prioriza</b> los riesgos que podrían interrumpir sus operaciones, afectar su rentabilidad o dañar su reputación, para decidir cómo anticiparse a ellos.</p>
+    <p class="kicker" style="margin-top:22px">Lo que vamos a recorrer juntos</p>
+    <div class="pipe steps4">
+      <div class="st"><i>1</i><b>Identificar</b><span>Detectar las señales débiles y clasificar los tipos de riesgo.</span></div>
+      <div class="st"><i>2</i><b>Analizar el impacto</b><span>Medir probabilidad, pérdida potencial y efecto en la operación.</span></div>
+      <div class="st"><i>3</i><b>Priorizar</b><span>Decidir qué riesgos atender primero y con cuántos recursos.</span></div>
+      <div class="st"><i>4</i><b>Mitigar</b><span>Construir agilidad y resiliencia para responder a tiempo.</span></div>
+    </div>
+  </div>
+  </div>
+  <div class="grid3 rules" data-step>
+    <p class="kicker" style="grid-column:1/-1;text-align:center">Antes de comenzar</p>
+    <div class="card"><h4>Relato</h4><p>Cada pantalla suma una pieza a la historia. Se avanza con <b>Continuar</b> o con la flecha derecha del teclado.</p></div>
+    <div class="card"><h4>Pausas</h4><p>De vez en cuando la historia se detiene con una pregunta del comité, para pensarla y discutirla en conjunto.</p></div>
+    <div class="card"><h4>Conceptos</h4><p>Cada acierto desbloquea un concepto, que queda guardado en el botón Conceptos para repasarlo.</p></div>
+    <p class="muted" style="grid-column:1/-1;font-size:13px;text-align:center;margin-top:10px">Los datos históricos del caso son reales; el resto de las cifras son ilustrativas para facilitar el ejercicio.</p>
+  </div>
+</section>
+
+<!-- ===== CAP 1 ===== -->
+<section class="scene" data-name="La señal" data-short="Señal">
+  <div class="sh"><p class="kicker">Capítulo 1 · Identificación temprana de señales</p><h2>Una tienda en Itagüí</h2></div>
+  <div class="slide" data-step>
+  <figure class="map">
+    <svg viewBox="0 0 640 260" role="img" aria-label="Esquema: grandes hipermercados y una tienda diminuta en Itagüí">
+      <defs><pattern id="gr" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="rgba(120,170,255,.12)"/></pattern></defs>
+      <rect width="640" height="260" fill="url(#gr)"/>
+      <path d="M0 200C160 170 300 235 640 175" stroke="rgba(120,170,255,.22)" fill="none" stroke-width="10"/>
+      <g class="hyp"><circle cx="150" cy="95" r="52"/><circle cx="470" cy="80" r="44"/><circle cx="545" cy="195" r="36"/></g>
+      <text x="150" y="99" text-anchor="middle">hipermercado líder</text><text x="470" y="84" text-anchor="middle">hipermercado</text>
+      <circle class="pingc" cx="330" cy="150" r="5"/><circle cx="330" cy="150" r="5" fill="#3CC8FF"/>
+      <text x="344" y="146">D1 · Itagüí · 2009</text>
+    </svg>
+    <figcaption>Esquema ilustrativo, sin escala.</figcaption>
+  </figure>
+  <div class="beat"><p><b>Itagüí, 2009.</b> Entre un taller y una panadería abre una tienda muy pequeña. Pocas referencias, casi todas de marca propia, a precios que ninguna cadena logra igualar.</p><p>Para el comité es una noticia más de la semana.</p></div>
+  </div>
+  <div class="memo" data-step><b>INFORME TRIMESTRAL</b>Nuevo formato de descuento en barrio popular de Itagüí. Escala mínima. Sin impacto material en ventas. Se sugiere no incluirlo en el plan estratégico.</div>
+  <div class="concept" data-step>
+    <p class="tag">Concepto</p>
+    <h3>Una señal ignorada hoy puede ser la disrupción total de mañana</h3>
+    <p class="muted">Identificar temprano es monitorear el entorno en busca de indicios que casi nadie percibe todavía. Así escala una señal:</p>
+    <div class="chain"><div class="c">Señal débil<small>2009 · una tienda en Itagüí</small></div><div class="c">Patrón emergente<small>D1 y Ara expanden el modelo en el país</small></div><div class="c">Disrupción total<small>El hard discount redefine el retail</small></div></div>
+    <p class="muted">Frente a una <b>señal débil</b> lo recomendable es registrarla y monitorearla; invertir con fuerza corresponde al patrón emergente.</p>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="b" data-unlock="senales" role="dialog" aria-modal="true" aria-labelledby="q1t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q1t">Con lo que se sabe en 2009, ¿qué hace el comité con esta tienda?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Es la reacción más común de los líderes y la más costosa. Medir una señal con la vara de hoy hace invisible lo que será grande mañana."><span class="k">A</span><span>Nada. Es una tienda pequeña en un barrio popular.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="Es la acción recomendada para una señal débil: registrar y monitorear sin sobrerreaccionar. Cuesta poco y conserva la opción de actuar."><span class="k">B</span><span>La registran y la monitorean de forma sistemática.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Es prematuro. Una sola tienda todavía no es un patrón; invertir a gran escala sin evidencia desperdicia recursos."><span class="k">C</span><span>Copian el formato de inmediato en toda la red.</span></button>
+        <button class="opt" type="button" data-k="d" data-fb="Atacar una señal que no se ha estudiado es reaccionar sin entender qué la hace atractiva para el cliente."><span class="k">D</span><span>Contratan una campaña de precios para frenarla.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAP 2 ===== -->
+<section class="scene" data-name="Identificar" data-short="Identificar">
+  <div class="sh"><p class="kicker">Capítulo 2 · Identificar</p><h2>El registro de riesgos</h2></div>
+  <div class="beat" data-step><p>El comité abre el registro de riesgos. El primer paso es identificar <b>qué podría interrumpir</b> la operación y de dónde puede venir ese riesgo.</p></div>
+  <div class="grid3" data-step data-unlock="tipos">
+    <div class="card"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg><h4>Tecnológico</h4><p>IA, blockchain o automatización que vuelven obsoletas las tecnologías actuales y cambian la dinámica del mercado.</p></div>
+    <div class="card"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><h4>Operativo</h4><p>Fallas en la cadena de suministro, en los sistemas de TI, en la producción o la logística. Un proveedor clave que falta puede paralizar todo.</p></div>
+    <div class="card"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg><h4>De mercado</h4><p>Cambios en las preferencias del consumidor, competidores disruptivos o fluctuaciones económicas que alteran la demanda.</p></div>
+  </div>
+  <div class="panel" data-step data-gate id="cls" data-unlock-done="tecno"></div>
+</section>
+
+<!-- ===== CAP 3 ===== -->
+<section class="scene" data-name="Priorizar" data-short="Priorizar">
+  <div class="sh"><p class="kicker">Capítulo 3 · Priorizar · Evaluación cualitativa</p><h2>Probabilidad por impacto</h2></div>
+  <div class="beat" data-step data-unlock="ident"><p>No hay recursos para atender todo. Primero se identifican los riesgos con <b>talleres, entrevistas y opinión de expertos</b> internos y externos. Luego se priorizan en una <b>matriz de probabilidad e impacto</b> con escalas de bajo, medio y alto.</p></div>
+  <div class="panel" data-step data-gate id="mxp" data-unlock-done="priorizacion">
+    <h3>¿Dónde se ubica el riesgo «Expansión del descuento duro (D1)»?</h3>
+    <p class="muted">Con la información de 2009, se elige en la matriz la celda que le corresponde.</p>
+    <div class="mxbody">
+      <div class="mxframe"><div class="ylab" style="grid-column:1;grid-row:1">Impacto</div><div class="yt" style="grid-column:2;grid-row:1"><span>Alto</span><span>Medio</span><span>Bajo</span></div><div class="mxgrid" id="mxgrid"></div><div class="xt"><span>Baja</span><span>Media</span><span>Alta</span></div><div class="xlab">Probabilidad</div></div>
+      <div class="mxside">
+        <div class="mxhint" id="mxhint"><ul class="legend" id="mxlegend"></ul></div>
+        <div class="verdict" id="mxverdict" hidden></div>
+        <div class="timebox" id="timebox" hidden>
+          <p><b>Ahora viajemos en el tiempo.</b> Al llevar la línea hasta 2024 se ve cómo se desplaza el riesgo en la matriz. La trayectoria es ilustrativa.</p>
+          <div class="bigyear"><b id="tyear">2009</b><span class="stagechip" id="tstage">Señal débil</span></div>
+          <input type="range" id="trange" min="2009" max="2024" step="1" value="2009" aria-label="Año">
+          <div class="stages" id="tstages">
+            <div data-s="0"><b>Señal débil</b>Monitorear y registrar.</div>
+            <div data-s="1"><b>Patrón emergente</b>Invertir y experimentar.</div>
+            <div data-s="2"><b>Disrupción consolidada</b>Competir o quedar desplazado.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" data-step id="qlp">
+    <p class="kicker">Evaluación cualitativa · Un mismo riesgo, distintos expertos</p>
+    <h3>«Expansión del descuento duro (D1)» según quién lo evalúa</h3>
+    <div class="qlgrid">
+      <div class="qlside">
+        <div class="qlexp" id="qlexp" role="group" aria-label="Experto que evalúa"></div>
+        <ol class="qlhow"><li><b>Juicio de expertos.</b> Cada persona califica según su experiencia.</li><li><b>Escala bajo, medio, alto.</b> Se califica la probabilidad y el impacto.</li><li><b>Matriz.</b> La celda resultante define la prioridad.</li></ol>
+      </div>
+      <div class="qlmx">
+        <div class="mxframe"><div class="ylab" style="grid-column:1;grid-row:1">Impacto</div><div class="yt" style="grid-column:2;grid-row:1"><span>Alto</span><span>Medio</span><span>Bajo</span></div><div class="mxgrid" id="qlgrid"></div><div class="xt"><span>Baja</span><span>Media</span><span>Alta</span></div><div class="xlab">Probabilidad</div></div>
+        <div class="qlres" id="qlres"></div>
+      </div>
+    </div>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="a" data-unlock="matriz" role="dialog" aria-modal="true" aria-labelledby="q3t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q3t">¿Cuál es el principal límite de la evaluación cualitativa?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Su fortaleza es capturar riesgos emergentes que aún no se pueden medir. Su límite es el juicio de quien evalúa. Por eso se complementa con la evaluación cuantitativa."><span class="k">A</span><span>Es subjetiva: depende de quién opina y de lo que ve hoy.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="Al contrario: es la herramienta útil para riesgos emergentes, porque no exige datos históricos."><span class="k">B</span><span>No sirve para riesgos que apenas emergen.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Eso describe la cuantitativa. La cualitativa trabaja con juicio experto y escalas."><span class="k">C</span><span>Solo funciona con datos financieros exactos.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAP 4 ===== -->
+<section class="scene" data-name="Cuantificar" data-short="Cuantificar">
+  <div class="sh"><p class="kicker">Capítulo 4 · Evaluación cuantitativa</p><h2>¿Cuánto podríamos perder?</h2></div>
+  <div class="beat" data-step><p>El director financiero lo dice sin rodeos: «Me sirve la matriz, pero necesito un número». Para eso se <b>simula</b>: se juegan miles de futuros posibles y se cuenta cuántos terminan mal.</p><p>Unidades: 100 equivale a los ingresos de un año del formato de tienda expuesto. Todos los parámetros son ilustrativos.</p></div>
+  <div class="panel" data-step data-gate id="simp" data-unlock-done="sens">
+    <h3>Simulemos 2.000 futuros posibles</h3>
+    <p class="muted">Cada barra cuenta cuántos de los 2.000 futuros terminan con esa pérdida. La barra gris son los futuros donde no pasa nada.</p>
+    <div class="simgrid">
+      <div class="ctls">
+        <div class="ctl"><label for="sp">¿Qué tan probable es que el descuento duro escale? <output id="op"></output></label><input type="range" id="sp" min="1" max="80" value="35"></div>
+        <div class="ctl"><label for="sm">Si escala, ¿qué parte de las ventas de un año se pierde? <output id="om"></output></label><input type="range" id="sm" min="10" max="150" value="60"><small class="ch">100 % = las ventas de un año de la tienda expuesta.</small></div>
+        <div class="ctl" style="display:none"><input type="range" id="ss" min="5" max="60" value="25"><output id="os"></output></div>
+        <button class="btn ghost sm" id="resim" type="button">Volver a sortear los 2.000 futuros</button>
+      </div>
+      <div>
+        <div class="hist" id="hist"><div class="vline v" id="vline"><span>Techo razonable</span></div><div class="vline p" id="pline"><span>Peor caso</span></div></div>
+        <div class="hax"><span>sin pérdida</span><span>50 %</span><span>100 %</span><span>150 %</span><span>200 %</span></div>
+        <p class="muted" style="font-size:12px;text-align:center">Pérdida acumulada en cada futuro, como % de las ventas de un año de la tienda expuesta</p>
+      </div>
+    </div>
+    <div class="sim3">
+      <div class="s3 g"><small>Sin pérdida</small><b id="kpr">–</b><span>futuros en los que no pasa nada.</span></div>
+      <div class="s3 a"><small>Techo razonable <em>(VaR 95 %)</em></small><b id="kvar">–</b><span>En 19 de cada 20 futuros la pérdida no pasa de este % de las ventas de un año.</span></div>
+      <div class="s3 r"><small>Peor caso <em>(1 de cada 100)</em></small><b id="kp99">–</b><span>Solo 1 de cada 100 futuros pierde más que este % de las ventas.</span></div>
+    </div>
+    <b id="kel" hidden></b>
+    <div class="read" id="simread"></div>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="a" data-unlock="cuant" role="dialog" aria-modal="true" aria-labelledby="q4t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q4t">Si la probabilidad baja a 3 %, ¿qué pasa con el VaR 95 %?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Cae a cero: con una probabilidad menor al 5 %, el percentil 95 cae en la zona sin pérdida. El riesgo sigue ahí, en la cola (P99). Por eso se combina el número con el juicio cualitativo."><span class="k">A</span><span>Cae a cero, aunque el riesgo sigue existiendo en la cola.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="Al bajar la probabilidad, la pérdida a 95 % de confianza no puede subir."><span class="k">B</span><span>Se duplica.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Sí cambia: el VaR depende directamente de qué tan probable es el evento. Al mover el control se comprueba."><span class="k">C</span><span>No cambia.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+  <div class="panel" data-step data-gate id="cbp" data-unlock="costo">
+    <h3>¿Compensa gastar en protegerse?</h3>
+    <p class="muted">Cada estrategia cuesta, pero reduce la pérdida promedio. Al marcar cada una se compara <b>lo que se gasta</b> con <b>lo que se evita perder</b> (en % de las ventas de un año de la tienda expuesta).</p>
+    <div class="cbgrid">
+      <div class="mit" id="mit"></div>
+      <div class="cbres">
+        <div class="cbbars" id="cbbars"></div>
+        <div class="cbverdict" id="cbverdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="concept" data-step data-unlock="compl">
+    <p class="tag">Concepto</p><h3>Cualitativa y cuantitativa se complementan</h3>
+    <div class="grid3"><div class="card"><h4>Cualitativa</h4><p>Flexible y rápida. Captura riesgos emergentes que aún no se pueden medir, con juicio de expertos y matrices.</p></div><div class="card"><h4>Cuantitativa</h4><p>Precisa y basada en datos. Proyecta pérdidas con simulaciones, VaR y análisis de sensibilidad.</p></div></div>
+    <p class="muted">Las organizaciones que combinan ambas obtienen una visión integral de su exposición: previenen interrupciones y también descubren oportunidades de innovación.</p>
+  </div>
+</section>
+
+<!-- ===== CAP 5 ===== -->
+<section class="scene" data-name="Impacto operativo" data-short="Cadena">
+  <div class="sh"><p class="kicker">Capítulo 5 · Impacto operativo</p><h2>Cuando se rompe la cadena</h2></div>
+  <div class="beat" data-step><p>No todas las interrupciones vienen del mercado. Imaginemos una línea de marca propia cuyo insumo crítico llega de <b>un solo proveedor</b>. Un lunes, el camión no llega.</p><p>Al hacer clic en un proveedor se interrumpe. Conviene probar las dos configuraciones.</p></div>
+  <div class="panel sc" data-step data-gate id="scp" data-unlock-done="impacto">
+    <div class="scgrid">
+      <div class="scleft">
+        <div class="row scbar"><div class="seg" role="group" aria-label="Configuración de proveedores"><button type="button" id="mSingle" class="on">Un solo proveedor</button><button type="button" id="mDiv">Varios proveedores</button></div>
+          <label class="row" style="gap:8px;font-size:13.5px"><input type="checkbox" id="scCont" style="accent-color:var(--lime);width:18px;height:18px"> Plan de contingencia</label>
+          <button class="btn ghost sm" id="scReset" type="button">Reiniciar</button></div>
+        <svg id="scsvg" viewBox="0 0 720 300" role="img" aria-label="Red de suministro: proveedores, centro de distribución y tiendas"></svg>
+        <p class="refs" style="text-align:center">Clic en un proveedor para interrumpirlo; otro clic para reactivarlo. Con varios proveedores, cada uno surte una parte (50 / 30 / 20 %) y puede subir hasta 40 % más como respaldo.</p>
+      </div>
+      <div class="scright">
+        <ol class="scsteps" id="scsteps"><li id="st1"><i>1</i><span>Con <b>un solo proveedor</b>, se interrumpe al proveedor A.</span></li><li id="st2"><i>2</i><span>Con <b>varios proveedores</b>, se interrumpe A otra vez.</span></li></ol>
+        <div class="gauge"><small>De lo que necesitan las tiendas, se abastece</small><div class="big2" id="scsvc">100%</div><div class="gbar"><i id="scgb"></i></div><small>Ventas en riesgo: <b id="scrisk">0%</b></small></div>
+        <div class="read" id="scread"></div>
+      </div>
+    </div>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="a" data-unlock="cadena" role="dialog" aria-modal="true" aria-labelledby="q5t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q5t">Cuando falló el proveedor principal, ¿qué redujo más el impacto operativo?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Diversificar proveedores fue lo que más movió el servicio. Combinado con un plan de contingencia, el impacto baja aún más. La dependencia de un proveedor único es una vulnerabilidad clásica de la cadena."><span class="k">A</span><span>Tener varios proveedores con capacidad de respaldo.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="Ayudó, pero con proveedor único apenas amortigua. Un plan de contingencia sin redundancia compra tiempo, no continuidad."><span class="k">B</span><span>Solo el plan de contingencia.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Sí hubo diferencia. El servicio a tiendas cambia entre ambas configuraciones."><span class="k">C</span><span>Ninguna: el impacto fue igual.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAP 6 ===== -->
+<section class="scene" data-name="Agilidad" data-short="Agilidad">
+  <div class="sh"><p class="kicker">Capítulo 6 · Agilidad organizacional</p><h2>Decidir a tiempo</h2></div>
+  <div class="beat" data-step><p>Detectar y medir no basta. Mientras una propuesta sube por varios niveles de aprobación, el competidor sigue abriendo tiendas.</p></div>
+  <div class="panel" data-step data-gate id="rcp">
+    <p class="muted" style="margin-bottom:12px">Llega una señal de alerta. El competidor abre <b>una tienda nueva cada 5 días</b>. ¿Cuántas abre mientras cada organización decide?</p>
+    <div class="row rcctl"><div class="ctl" style="min-width:260px;flex:1"><label for="rlv">Firmas que necesita la jerarquía para aprobar <output id="orlv"></output></label><input type="range" id="rlv" min="1" max="7" value="5"><small class="ch">Cada firma agrega 6 días de espera. El equipo empoderado decide solo, en 4 días.</small></div>
+      <button class="btn" id="rgo" type="button">Repetir la carrera</button></div>
+    <div class="lane"><div class="lh"><h4>Estructura jerárquica</h4><div class="cnt" id="cn1"><b>0</b> tiendas del competidor</div></div><div class="track" id="tr1"></div><div class="lres" id="rs1"></div></div>
+    <div class="lane agile"><div class="lh"><h4>Equipo empoderado</h4><div class="cnt" id="cn2"><b>0</b> tiendas del competidor</div></div><div class="track" id="tr2"></div><div class="lres" id="rs2"></div></div>
+    <div class="read" id="rread">Al mover el control de firmas cambia el resultado de la carrera.</div>
+  </div>
+  <div class="concept" data-step data-unlock="innov">
+    <p class="tag">Concepto</p><h3>Atributos de una organización ágil</h3>
+    <div class="chipl"><span>Toma de decisiones rápida</span><span>Flexibilidad operativa</span><span>Capacidad de innovación continua</span><span>Cultura organizacional de aprendizaje</span><span>Tecnologías avanzadas</span></div>
+    <p class="muted">Descentralizar el poder de decisión y apoyarse en datos en tiempo real permite decidir con rapidez y con evidencia. Las organizaciones ágiles no solo gestionan el riesgo: ven la disrupción como una oportunidad para innovar y mejorar su competitividad.</p>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="c" data-unlock="agilidad" role="dialog" aria-modal="true" aria-labelledby="q6t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q6t">¿Cuál de estas NO es una característica de la organización ágil?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Sí es: los equipos empoderados deciden con datos y conocimiento de su área."><span class="k">A</span><span>Equipos empoderados que toman decisiones clave de forma autónoma.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="Sí es: la cultura donde equivocarse deja aprendizaje sostiene la agilidad."><span class="k">B</span><span>Cultura que acepta riesgos calculados y aprende del fracaso.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Correcto. Escalar cada decisión por múltiples niveles es lo que frena la respuesta. La agilidad descentraliza la decisión."><span class="k">C</span><span>Concentrar toda decisión en la alta gerencia.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAP 7 ===== -->
+<section class="scene" data-name="Resiliencia" data-short="Resiliencia">
+  <div class="sh"><p class="kicker">Capítulo 7 · Mitigación y resiliencia</p><h2>El presupuesto de resiliencia</h2></div>
+  <div class="beat" data-step><p>Ya saben qué riesgos hay, cuánto pesan y qué tan rápido deciden. El comité recibe <b>100 puntos</b> para repartir en cinco palancas. Después llegan tres choques: uno tecnológico, uno operativo y uno de mercado.</p></div>
+  <div class="panel" data-step data-gate id="bdp">
+    <div class="row bdtop"><span class="pts" id="bpts"></span><span class="sp"></span><button class="btn ghost sm" data-preset="react" type="button">Escenario reactivo</button><button class="btn ghost sm" data-preset="antic" type="button">Escenario anticipador</button><button class="btn ghost sm" data-preset="zero" type="button">Empezar de cero</button></div>
+    <div class="bud"><div id="blev"></div>
+      <div class="bres">
+        <div class="ringwrap"><svg viewBox="0 0 160 160" class="ring" aria-hidden="true"><circle cx="80" cy="80" r="66" class="rbg"/><circle cx="80" cy="80" r="66" class="rfg" id="rfg" transform="rotate(-90 80 80)"/></svg><div class="rnum"><b id="rpct">0%</b><small>Índice de resiliencia</small></div></div>
+        <div class="shrings" id="bshock"></div>
+        <div class="read" id="bread"></div>
+      </div>
+    </div>
+  </div>
+  <div class="concept" data-step data-unlock="mitig">
+    <p class="tag">Concepto desbloqueado</p><h3>Estrategias de mitigación</h3>
+    <div class="chipl"><span>Automatización</span><span>Diversificación de proveedores</span><span>Planes de contingencia y recuperación</span><span>Vigilancia y análisis predictivo</span><span>Innovación y alianzas</span></div>
+    <p class="muted">Repartir entre varias palancas resiste más choques que apostar todo a una sola.</p>
+  </div>
+  <div class="concept" data-step>
+    <p class="tag">Concepto</p><h3>Resiliencia operacional</h3>
+    <div class="chipl"><span>Adaptarse</span><span>Recuperarse</span><span>Prosperar</span></div>
+    <p class="muted">Una organización resiliente no solo resiste: aprende de la disrupción, innova incluso en medio de la crisis y emerge fortalecida.</p>
+  </div>
+  <div class="pop" data-step data-gate data-q data-correct="b" data-unlock="resil" role="dialog" aria-modal="true" aria-labelledby="q7t">
+    <div class="pop-card"><p class="tag"><i></i>Pausa · Pregunta del comité</p>
+      <h3 id="q7t">Una organización resiliente, ¿qué hace además de sobrevivir a la disrupción?</h3>
+      <div class="opts">
+        <button class="opt" type="button" data-k="a" data-fb="Volver exactamente al estado anterior es resistir, no adaptarse. El entorno ya cambió."><span class="k">A</span><span>Vuelve exactamente al estado anterior.</span></button>
+        <button class="opt" type="button" data-k="b" data-fb="La resiliencia es adaptarse, recuperarse y prosperar. Aprende de la disrupción, innova incluso en crisis y emerge fortalecida."><span class="k">B</span><span>Aprende de ella, innova y sale fortalecida.</span></button>
+        <button class="opt" type="button" data-k="c" data-fb="Recortar innovación reduce la capacidad de adaptación justo cuando más se necesita."><span class="k">C</span><span>Recorta toda innovación para ahorrar.</span></button>
+      </div><div class="fb" aria-live="polite"></div>
+      <div class="pop-foot"><button class="btn ghost sm t-only skip" type="button">Saltar</button><button class="btn go" type="button" disabled>Continuar</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAP 8 ===== -->
+<section class="scene" data-name="Desenlace" data-short="Desenlace">
+  <div class="sh"><p class="kicker">Capítulo 8 · Desenlace</p><h2>Lo que realmente pasó</h2></div>
+  <div class="tl" data-step data-year="2009"><div class="tlr"><div class="y">2009</div><p>D1 abre su primera tienda en un barrio de Itagüí con un modelo austero y marcas propias.</p></div></div>
+  <div class="tl" data-step data-year="2015"><div class="tlr"><div class="y">2015</div><div><div class="huge"><span class="count" data-to="9">0</span>x</div><p>Éxito vendía nueve veces más que D1, justo antes de que el descuento duro le diera la vuelta al mercado.</p></div></div></div>
+  <div class="tl" data-step><div class="tlr"><div class="y">Después</div><p>D1 multiplicó sus tiendas, ganó a los consumidores sensibles al precio y se consolidó como el retailer líder en volumen de ventas de Colombia. Éxito detectó el cambio, pero no lo tradujo en un análisis de impacto real.</p></div></div>
+  <div class="tl" data-step data-year="2024"><div class="tlr"><div class="y">2024</div><div><div class="huge"><span class="count" data-to="15">0</span> años</div><p>Separan la primera tienda D1 del cambio de control de Grupo Éxito: en enero de 2024, Grupo Calleja tomó el control.</p></div></div></div>
+  <div class="quote" data-step>¿Qué habría cambiado si Éxito hubiera convertido las señales de D1 en un análisis de impacto, en lugar de una reacción tardía?</div>
+  <div class="panel qz" data-step id="quizp">
+    <div id="qzbody"></div>
+  </div>
+</section>
+</main>
+
+<div class="nav"><div class="nav-in">
+  <button class="btn ghost" id="bPrev" type="button">Anterior</button>
+  <div class="prog" id="prog" aria-hidden="true"></div>
+  <button class="btn" id="bNext" type="button">Continuar</button>
+</div></div>
+<aside class="drawer" id="dConc" aria-label="Conceptos"><h3>Conceptos desbloqueados</h3><div id="dcList"></div><button class="btn ghost sm" data-close type="button">Cerrar</button></aside>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var fmt=function(n,d){d=d==null?1:d;return n.toLocaleString('es-CO',{minimumFractionDigits:d,maximumFractionDigits:d})};
+var CONCEPTS={
+ evaluacion:['Evaluación del riesgo de interrupción','Proceso por el cual una organización identifica, analiza y prioriza riesgos que podrían interrumpir sus operaciones, impactar su rentabilidad o dañar su reputación.'],
+ senales:['Identificación temprana de señales','Monitorear de forma continua el entorno en busca de señales débiles: tecnologías que adoptan los competidores, cambios regulatorios o tendencias del consumidor. Permite responder antes de que el riesgo se materialice.'],
+ tipos:['Tipos de riesgo de interrupción','Tecnológicos (obsolescencia por IA, blockchain, automatización), operativos (cadena de suministro, TI, producción) y de mercado (consumidor, competidores, economía).'],
+ priorizacion:['Priorización de riesgos','Los riesgos se ordenan por probabilidad e impacto. Los de alta probabilidad y alto impacto exigen acción inmediata y más recursos.'],
+ matriz:['Evaluación cualitativa y matriz de probabilidad e impacto','Se basa en el juicio de expertos y escalas bajo, medio y alto. Es flexible y captura riesgos emergentes que aún no se pueden medir, pero es subjetiva.'],
+ cuant:['Evaluación cuantitativa: VaR y Monte Carlo','Usa datos históricos y modelos matemáticos para proyectar pérdidas. El valor en riesgo (VaR) y las simulaciones estiman cuánto se podría perder con cierta confianza.'],
+ costo:['Análisis costo-beneficio de la mitigación','Compara el costo de una estrategia con la pérdida esperada que evita. Ayuda a decidir qué riesgos gestionar primero y con qué recursos.'],
+ impacto:['Impacto operativo','Mide cómo una disrupción afecta los procesos internos: producción, sistemas de información, logística y capacidad de cumplir con la demanda.'],
+ cadena:['Vulnerabilidades en la cadena de suministro','Dependencia de un solo proveedor, falta de acceso a materiales críticos y retrasos logísticos. Exige diversificar proveedores y planificar la continuidad operativa.'],
+ agilidad:['Agilidad organizacional','Capacidad de adaptarse rápido: decisiones descentralizadas, flexibilidad operativa, innovación continua, cultura de aprendizaje y tecnologías avanzadas.'],
+ mitig:['Estrategias de mitigación','Automatización, diversificación de proveedores y planes de contingencia y recuperación, para reducir o eliminar el efecto de un riesgo identificado.'],
+ resil:['Resiliencia operacional','Capacidad de adaptarse, recuperarse y prosperar en medio de disrupciones o crisis, aprender de ellas e innovar para emerger fortalecida.']
+};
+CONCEPTS.tecno=['Riesgo de disrupción tecnológica','Aparece con tecnologías emergentes (inteligencia artificial, blockchain, automatización industrial) que cambian radicalmente el modelo de negocio. Las empresas que no se adaptan pueden ser desplazadas por competidores más ágiles.'];
+CONCEPTS.ident=['Identificación de riesgos','Se hace con talleres, entrevistas y opiniones de expertos internos y externos. Es el primer componente de la evaluación, antes del análisis de impacto y la priorización.'];
+CONCEPTS.sens=['Análisis de sensibilidad','Cambia un supuesto a la vez para ver cuánto mueve el resultado. Identifica qué variables pesan más en la pérdida potencial.'];
+CONCEPTS.compl=['Evaluación cualitativa y cuantitativa: complementarias','Combinadas dan una visión integral de la exposición a riesgos: previenen interrupciones y revelan oportunidades de innovación y mejora.'];
+CONCEPTS.innov=['Innovación continua y cultura organizacional','Las organizaciones ágiles ven las disrupciones como oportunidades para reinventar productos y servicios, y fomentan una cultura donde el aprendizaje y el error calculado son parte del trabajo.'];
+var CKEYS=['evaluacion','senales','tecno','tipos','ident','matriz','priorizacion','cuant','sens','costo','compl','impacto','cadena','agilidad','innov','mitig','resil'];
+var S={cur:0,steps:[],unlocked:{},sc:{ok:0,total:0},mxYear:2009,res:null,v95:null,days:null};
+var scenes=$$('.scene');
+var visited={0:true};
+S.pos=[];S.sl=[];
+var SUBT=['','¿Qué hace un comité con una señal que casi nadie ve?','Nombrar qué puede interrumpir el negocio y de dónde viene.','Con recursos limitados, ¿qué riesgo se atiende primero?','Del juicio experto al número: simulación, VaR y costo-beneficio.','Un lunes el camión no llega. ¿Qué tan expuesta está la operación?','Detectar y medir no basta: hay que decidir a tiempo.','Cien puntos, cinco palancas y tres choques.','Lo que pasó en realidad y una evaluación para cerrar.'];
+scenes.forEach(function(sc,i){
+  var sh=$('.sh',sc);
+  if(sh){sh.setAttribute('data-step','');var k=$('.kicker',sh),m=k&&k.textContent.match(/^Capítulo (\d+)/);
+    if(m){var nn=document.createElement('span');nn.className='num';nn.setAttribute('aria-hidden','true');nn.textContent=m[1];sh.insertBefore(nn,sh.firstChild)}
+    if(SUBT[i]){var sp=document.createElement('p');sp.className='subt';sp.textContent=SUBT[i];sh.appendChild(sp)}
+    var cr=document.createElement('div');cr.className='crumb';cr.innerHTML='<b>Capítulo '+i+'</b><span>'+$('h2',sh).textContent+'</span>';sc.insertBefore(cr,sc.firstChild)}
+  sc._steps=$$('[data-step]',sc);S.pos[i]=-1;S.sl[i]=-1;
+});
+
+/* ---------- helpers ---------- */
+var toastT;
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show')},3200)}
+function unlock(list){String(list).split(',').forEach(function(k){k=k.trim();if(!k||S.unlocked[k]||!CONCEPTS[k])return;S.unlocked[k]=1;toast('Concepto desbloqueado · '+CONCEPTS[k][0]);renderConc()})}
+function renderConc(){
+  var n=Object.keys(S.unlocked).length;$('#cCount').textContent=n+'/'+CKEYS.length;
+  $('#dcList').innerHTML=CKEYS.map(function(k){var u=S.unlocked[k];return '<div class="dc'+(u?'':' lock')+'"><b>'+(u?CONCEPTS[k][0]:'Concepto por descubrir')+'</b><p>'+CONCEPTS[k][1]+'</p></div>'}).join('');
+}
+function updScore(){$('#cScore').textContent=S.sc.ok+'/'+S.sc.total}
+var yv=2009,yRaf=0;
+function setYear(y,ms){
+  cancelAnimationFrame(yRaf);var el=$('#year'),from=yv;
+  if(!ms||reduce||from===y){yv=y;el.textContent=Math.round(y);return}
+  var t0=performance.now();
+  (function f(t){var k=Math.min(1,(t-t0)/ms);yv=from+(y-from)*(1-Math.pow(1-k,3));el.textContent=Math.round(yv);if(k<1)yRaf=requestAnimationFrame(f)})(t0);
+}
+function countUp(el){
+  var to=+el.dataset.to;if(reduce){el.textContent=to;return}
+  var t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1500);el.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0);
+}
+function markDone(el){
+  if(!el||el.classList.contains('done'))return;
+  el.classList.add('done');if(el.dataset.unlockDone)unlock(el.dataset.unlockDone);
+  updateNav();var b=$('#bNext');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse');
+}
+window.__markDone=markDone;
+function openPop(){return $('.pop.in')}
+function isPop(e){return e.classList.contains('pop')}
+function slidesOf(i){return scenes[i]._steps.filter(function(e){return !isPop(e)})}
+
+/* ---------- navegación por pantallas ---------- */
+function showSlide(i,k){
+  var sc=scenes[i],el=sc._steps[k];
+  sc._steps.forEach(function(e,j){if(!isPop(e))e.classList.toggle('in',j===k)});
+  S.pos[i]=k;S.sl[i]=k;
+  sc.classList.toggle('is-title',el.classList.contains('sh')||el.classList.contains('cv'));
+  window.scrollTo(0,0);
+  if(el.dataset.unlock)unlock(el.dataset.unlock);
+  if(el.dataset.year)setYear(+el.dataset.year,1400);
+  $$('.count',el).forEach(countUp);
+  el.dispatchEvent(new CustomEvent('reveal'));
+  fitSoon();
+}
+var _ft=0;
+function fitSoon(){clearTimeout(_ft);_ft=setTimeout(fit,60)}
+function fit(){
+  var sc=scenes[S.cur];if(!sc)return;
+  var kids=Array.prototype.filter.call(sc.children,function(c){return c.classList.contains('crumb')||(c.hasAttribute('data-step')&&c.classList.contains('in')&&!isPop(c))});
+  kids.forEach(function(c){c.style.zoom=''});sc.style.minHeight='';
+  if(innerWidth<=760){return}
+  sc.style.minHeight='0';
+  var nav=$('.nav'),navH=nav?nav.offsetHeight:90,top=sc.getBoundingClientRect().top+scrollY;
+  var avail=innerHeight-navH-top-14,h=sc.scrollHeight;
+  var z=h>avail?Math.max(.6,avail/h):1;
+  if(z<1){kids.forEach(function(c){c.style.zoom=z})}else{sc.style.minHeight=''}
+}
+addEventListener('resize',fitSoon);
+['click','input','change','pointerup'].forEach(function(t){document.addEventListener(t,fitSoon,true)});
+
+function nextIdx(i){var st=scenes[i]._steps,p=S.pos[i]+1;while(st[p]&&isPop(st[p])&&st[p].classList.contains('done'))p++;return st[p]?p:-1}
+function reveal(){
+  var i=S.cur,p=nextIdx(i);if(p<0)return false;var el=scenes[i]._steps[p];
+  if(isPop(el)){S.pos[i]=p;el.classList.add('in');document.body.classList.add('modal');var f=$('.opt',el);if(f)f.focus({preventScroll:true})}
+  else showSlide(i,p);
+  updateNav();return true;
+}
+function go(i,end){
+  if(i<0||i>=scenes.length)return;
+  S.cur=i;visited[i]=true;
+  scenes.forEach(function(s,j){s.classList.toggle('active',j===i)});
+  if(i!==8)setYear(i===3?S.mxYear:2009,600);
+  if(end){var idx=0;scenes[i]._steps.forEach(function(e,j){if(!isPop(e))idx=j});showSlide(i,idx)}
+  else if(S.sl[i]<0)reveal();
+  else showSlide(i,S.sl[i]);
+  scenes[i].dispatchEvent(new CustomEvent('enter'));
+  updHud();updateNav();
+}
+function next(){
+  if(openPop())return;
+  if(!reveal()&&S.cur<scenes.length-1)go(S.cur+1);
+}
+function prev(){
+  if(openPop())return;
+  var i=S.cur,st=scenes[i]._steps,k=S.sl[i]-1;
+  while(k>=0&&isPop(st[k]))k--;
+  if(k>=0){showSlide(i,k);updateNav()}else if(i>0)go(i-1,true);
+}
+function updHud(){
+  $$('.pill').forEach(function(b,i){b.classList.toggle('on',i===S.cur);b.classList.toggle('vis',!!visited[i])});
+}
+function updateNav(){
+  var i=S.cur,sc=scenes[i],sl=slidesOf(i),ci=sl.indexOf(scenes[i]._steps[S.sl[i]]),b=$('#bNext');
+  var more=nextIdx(i)>=0,last=i===scenes.length-1&&!more,label;
+  if(last)label='Reiniciar caso';
+  else if(ci===0&&sc.dataset.cta)label=sc.dataset.cta;
+  else label=more?'Continuar':'Siguiente capítulo';
+  b.textContent=label;b.disabled=!!openPop();b.setAttribute('aria-disabled',b.disabled?'true':'false');
+  $('#bPrev').disabled=(i===0&&ci<=0);
+  var dots='';for(var d=0;d<sl.length;d++)dots+='<i'+(d<=ci?' class="on"':'')+'></i>';
+  $('#prog').innerHTML='<span class="pt">'+(i===0?'Bienvenida':i+'. '+sc.dataset.name)+'</span><div class="dots">'+dots+'</div>';
+}
+function closePop(p){p.classList.remove('in');document.body.classList.remove('modal');markDone(p);$('#bNext').focus({preventScroll:true})}
+function skipPop(p){if(p.dataset.unlock)unlock(p.dataset.unlock);closePop(p)}
+
+/* pills */
+scenes.forEach(function(s,i){
+  var b=document.createElement('button');b.type='button';b.className='pill';b.setAttribute('aria-label','Capítulo '+i+': '+s.dataset.name);
+  b.innerHTML='<i></i><span>'+s.dataset.short+'</span>';
+  b.onclick=function(){go(i)};$('#pills').appendChild(b);
+});
+$('#bNext').onclick=function(){if(S.cur===scenes.length-1&&nextIdx(S.cur)<0){location.reload();return}next()};
+$('#bPrev').onclick=prev;
+
+/* drawers */
+function drawer(id,btn){var d=$(id);return function(force){var o=force===undefined?!d.classList.contains('open'):force;$$('.drawer').forEach(function(x){x.classList.remove('open')});if(o)d.classList.add('open')}}
+var tConc=drawer('#dConc');
+$('#bConc').onclick=function(){tConc()};
+$$('[data-close]').forEach(function(b){b.onclick=function(){$$('.drawer').forEach(function(x){x.classList.remove('open')})}});
+document.addEventListener('keydown',function(e){
+  var t=e.target&&e.target.tagName;if(/INPUT|TEXTAREA|SELECT/.test(t))return;
+  if(e.key==='ArrowRight'){next()}
+  else if(e.key==='ArrowLeft'){prev()}
+  else if(e.key==='c'||e.key==='C'){tConc()}
+  else if(e.key===' '&&e.target===document.body){e.preventDefault();next()}
+  else if(e.key==='Escape'){$$('.drawer').forEach(function(x){x.classList.remove('open')})}
+});
+
+/* ---------- pop questions ---------- */
+document.addEventListener('click',function(e){
+  var skip=e.target.closest('.skip');if(skip){skipPop(skip.closest('.pop'));return}
+  var go_=e.target.closest('.pop .go');if(go_){closePop(go_.closest('.pop'));return}
+  var opt=e.target.closest('.pop .opt');if(!opt||opt.disabled)return;
+  var pop=opt.closest('.pop'),k=opt.dataset.k,cor=pop.dataset.correct,fb=$('.fb',pop);
+  if(!pop._first){pop._first=1;if(cor){S.sc.total++;if(k===cor)S.sc.ok++;updScore()}}
+  var good=!cor||k===cor;
+  opt.classList.add(good?'ok':'bad');
+  fb.className='fb show '+(good?'ok':'bad');
+  fb.innerHTML='<strong>'+(good?'Correcto. ':'Todavía no. ')+'</strong>'+opt.dataset.fb;
+  if(good){
+    $$('.opt',pop).forEach(function(o){if(o!==opt)o.disabled=true});
+    $('.go',pop).disabled=false;$('.go',pop).focus({preventScroll:true});
+    if(pop.dataset.unlock&&!pop._u){pop._u=1;unlock(pop.dataset.unlock)}
+  }
+});
+
+/* ---------- ambient background ---------- */
+(function(){
+  var cv=$('#bg'),ctx=cv.getContext('2d'),w,h,pts=[];
+  function size(){var r=window.devicePixelRatio||1;w=innerWidth;h=innerHeight;cv.width=w*r;cv.height=h*r;ctx.setTransform(r,0,0,r,0,0);
+    var n=Math.round(Math.min(60,w*h/22000));pts=[];for(var i=0;i<n;i++)pts.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25})}
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<pts.length;i++){var p=pts[i];
+      if(!reduce){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1}
+      ctx.fillStyle='rgba(120,200,255,.5)';ctx.beginPath();ctx.arc(p.x,p.y,1.4,0,6.3);ctx.fill();
+      for(var j=i+1;j<pts.length;j++){var q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<130){ctx.strokeStyle='rgba(120,170,255,'+(.16*(1-d/130))+')';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}}}
+    if(!reduce&&!document.hidden)requestAnimationFrame(draw);
+  }
+  size();draw();addEventListener('resize',function(){size();if(reduce)draw()});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&!reduce)draw()});
+})();
+
+/* ---------- CAP 2: clasificador (arrastrar y soltar) ---------- */
+(function(){
+  var host=$('#cls');
+  var items=[
+   ['Una cadena de tiendas pequeñas con marcas propias gana clientes en barrios populares a precios que nadie iguala.','Descuento duro en barrios populares','mercado','Cambia la competencia y la demanda: riesgo de mercado por un competidor disruptivo.'],
+   ['Un solo proveedor abastece un insumo crítico de una línea completa de productos.','Proveedor único de un insumo crítico','operativo','Dependencia de un proveedor único en la cadena de suministro: riesgo operativo.'],
+   ['Un competidor automatiza su logística con analítica de datos y baja sus costos.','Competidor automatiza su logística','tecnologico','La tecnología cambia la estructura de costos de la industria: riesgo tecnológico.'],
+   ['Tras una desaceleración económica, el precio pasa a ser el criterio principal de compra.','Desaceleración: manda el precio','mercado','Cambia el comportamiento del consumidor y la economía: riesgo de mercado.'],
+   ['El sistema de inventarios falla y las tiendas se quedan sin reposición durante días.','Falla del sistema de inventarios','operativo','Falla de TI y logística que interrumpe procesos internos: riesgo operativo.'],
+   ['Una plataforma de datos con inteligencia artificial vuelve obsoleta la forma actual de fijar precios.','IA vuelve obsoleta la fijación de precios','tecnologico','Obsolescencia por tecnología emergente: riesgo tecnológico.']
+  ];
+  var Z=[['tecnologico','Tecnológico','IA, automatización, obsolescencia'],['operativo','Operativo','Cadena de suministro, TI, producción'],['mercado','De mercado','Consumidor, competencia, economía']];
+  host.innerHTML='<div class="dd-head"><div><h3>Registro de riesgos del comité</h3><p class="muted">Cada entrada se arrastra a la caja de su fuente principal.</p></div><span class="cl-prog" id="ddprog"></span></div>'+
+   '<div class="dd-stage"><div class="dd-card" id="ddcard" role="button" tabindex="0" aria-label="Tarjeta de riesgo, arrastrar a una caja"></div></div>'+
+   '<p class="dd-fb" id="ddfb" aria-live="polite">&nbsp;</p>'+
+   '<div class="dd-zones">'+Z.map(function(z){return '<div class="dd-zone" data-z="'+z[0]+'" tabindex="0" role="button" aria-label="Caja '+z[1]+'"><h4>'+z[1]+'</h4><small>'+z[2]+'</small><div class="dd-chips"></div></div>'}).join('')+'</div>'+
+   '<p class="read" id="clsum" hidden></p>';
+  var card=$('#ddcard'),fb=$('#ddfb'),cur=0,firstTry=0,bad=false,sel=false,drag=null;
+  function show(){
+    var it=items[cur];card.hidden=false;card.className='dd-card pop-in';card.style.transform='';card.textContent=it[0];
+    $('#ddprog').textContent='Riesgo '+(cur+1)+' de '+items.length;bad=false;
+  }
+  function place(zone){
+    var it=items[cur],ok=zone.dataset.z===it[2];
+    if(!bad&&!card._cnt){card._cnt=1}
+    if(!card._t){card._t=1;S.sc.total++}
+    if(ok){
+      if(!bad){S.sc.ok++;firstTry++}updScore();
+      var ch=document.createElement('span');ch.className='dd-chip';ch.textContent=it[1];$('.dd-chips',zone).appendChild(ch);
+      zone.classList.add('hit');setTimeout(function(){zone.classList.remove('hit')},700);
+      fb.className='dd-fb ok';fb.textContent=it[3];
+      card._t=0;cur++;
+      if(cur<items.length){setTimeout(show,900);card.className='dd-card gone'}
+      else{card.hidden=true;$('.dd-stage',host).style.display='none';$('#ddprog').textContent='Completado';var s=$('#clsum');s.hidden=false;s.textContent='Clasificaron '+firstTry+' de '+items.length+' a la primera. Una misma entrada puede tocar dos tipos; lo importante es identificarla temprano.';markDone(host)}
+    }else{
+      bad=true;zone.classList.add('miss');setTimeout(function(){zone.classList.remove('miss')},600);
+      card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');
+      fb.className='dd-fb bad';fb.textContent='Esa caja no es la fuente principal. Se puede intentar de nuevo.';
+    }
+  }
+  function zoneAt(x,y){card.style.pointerEvents='none';var el=document.elementFromPoint(x,y);card.style.pointerEvents='';return el&&el.closest('.dd-zone')}
+  card.addEventListener('pointerdown',function(e){
+    if(cur>=items.length||card.classList.contains('gone'))return;
+    drag={x:e.clientX,y:e.clientY,moved:false};card.setPointerCapture(e.pointerId);card.classList.add('drag');
+  });
+  card.addEventListener('pointermove',function(e){
+    if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;
+    card.style.transform='translate('+dx+'px,'+dy+'px) rotate('+(dx/40)+'deg)';
+    var z=zoneAt(e.clientX,e.clientY);$$('.dd-zone',host).forEach(function(q){q.classList.toggle('over',q===z)});
+  });
+  function end(e){
+    if(!drag)return;var z=zoneAt(e.clientX,e.clientY),moved=drag.moved;drag=null;card.classList.remove('drag');
+    $$('.dd-zone',host).forEach(function(q){q.classList.remove('over')});
+    card.style.transform='';
+    if(z&&moved)place(z);else if(moved){fb.className='dd-fb';fb.textContent='Soltar la tarjeta dentro de una de las tres cajas.'}
+    else{sel=!sel;card.classList.toggle('sel',sel)}
+  }
+  card.addEventListener('pointerup',end);card.addEventListener('pointercancel',function(){drag=null;card.classList.remove('drag');card.style.transform=''});
+  /* alternativa sin arrastre: seleccionar la tarjeta y tocar una caja */
+  host.addEventListener('click',function(e){
+    var z=e.target.closest('.dd-zone');if(!z||!sel||cur>=items.length||card.classList.contains('gone'))return;
+    sel=false;card.classList.remove('sel');place(z);
+  });
+  show();
+})();
+
+/* ---------- CAP 3: matriz ---------- */
+(function(){
+  var grid=$('#mxgrid'),lv=['Baja','Media','Alta'],li=['Bajo','Medio','Alto'];
+  for(var r=2;r>=0;r--)for(var c=0;c<3;c++){
+    var b=document.createElement('button');b.type='button';b.className='cell';b.dataset.c=c;b.dataset.r=r;
+    b.style.background='hsla('+(150-(c+r)*36)+',65%,26%,.6)';
+    b.setAttribute('aria-label','Probabilidad '+lv[c]+', impacto '+li[r]);grid.appendChild(b);
+  }
+  function pos(el,p,i){el.style.left=(p/3*100)+'%';el.style.top=((3-i)/3*100)+'%'}
+  var others=[['R1','Falla del sistema de inventarios',1.5,2.3],['R2','Proveedor único de una línea de marca propia',1.15,1.4],['R3','Cambio regulatorio de precios',.4,1.75],['R4','Nuevo hipermercado competidor',2.4,1.25]];
+  others.forEach(function(o){var e=document.createElement('div');e.className='bub';e.textContent=o[0];pos(e,o[2],o[3]);grid.appendChild(e)});
+  $('#mxlegend').innerHTML='<li style="color:var(--cyan)"><b>D1</b>Expansión del descuento duro (su ubicación)</li>'+others.map(function(o){return '<li><b>'+o[0]+'</b>'+o[1]+'</li>'}).join('')+'<li style="font-size:12px;color:var(--dim)">Riesgos R1 a R4: registro ilustrativo.</li>';
+  var me=document.createElement('div');me.className='bub me';me.textContent='D1';me.hidden=true;grid.appendChild(me);
+  grid.addEventListener('click',function(e){
+    var c=e.target.closest('.cell');if(!c)return;
+    var cc=+c.dataset.c,rr=+c.dataset.r;
+    me.hidden=false;pos(me,cc+.5,rr+.5);
+    var v=$('#mxverdict');v.hidden=false;
+    v.innerHTML='Ubicaron el riesgo en <b>probabilidad '+lv[cc].toLowerCase()+'</b> e <b>impacto '+li[rr].toLowerCase()+'</b>. En 2009 los líderes lo habrían calificado como <b>baja y bajo</b>: «irrelevante».';
+    $('#timebox').hidden=false;$('#mxhint').hidden=true;
+  });
+  var K=[[2009,.5,.5],[2015,1.6,1.5],[2024,2.5,2.5]];
+  function at(y){for(var i=0;i<K.length-1;i++){var a=K[i],b=K[i+1];if(y<=b[0]){var t=(y-a[0])/(b[0]-a[0]);return [a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}}return [K[2][1],K[2][2]]}
+  var rg=$('#trange');
+  var stageN=['Señal débil','Patrón emergente','Disrupción consolidada'];
+  rg.addEventListener('input',function(){
+    var y=+rg.value;S.mxYear=y;setYear(y,0);$('#tyear').textContent=y;
+    var s=y<2013?0:y<2019?1:2;$('#tstage').textContent=stageN[s];
+    $$('#tstages>div').forEach(function(d){d.classList.toggle('on',+d.dataset.s===s)});
+    var p=at(y);me.hidden=false;pos(me,p[0],p[1]);
+    if(y>=2024)markDone($('#mxp'));
+  });
+  $$('#tstages>div')[0].classList.add('on');
+})();
+
+/* ---------- CAP 3: evaluación cualitativa por expertos ---------- */
+(function(){
+  var g=$('#qlgrid');if(!g)return;
+  var lv=['Baja','Media','Alta'],li=['Bajo','Medio','Alto'];
+  for(var r=2;r>=0;r--)for(var c=0;c<3;c++){var d=document.createElement('div');d.className='cell';d.style.background='hsla('+(150-(c+r)*36)+',65%,26%,.6)';g.appendChild(d)}
+  var E=[
+   {n:'Comercial',rol:'Ventas y mercadeo',p:0,i:0,q:'«Es una tienda pequeña en un barrio popular. No toca nuestros clientes.»'},
+   {n:'Finanzas',rol:'Márgenes y costos',p:1,i:1,q:'«Si el formato escala, presiona el margen de nuestras marcas propias.»'},
+   {n:'Estrategia',rol:'Tendencias del consumidor',p:2,i:2,q:'«El consumidor se mueve hacia el precio. Esto puede ser el patrón de los próximos años.»'}
+  ];
+  var PR=['Prioridad baja','Prioridad baja','Prioridad media','Prioridad alta','Prioridad crítica'],PC=['#5BF0A8','#5BF0A8','#FFC857','#FF9B54','#FF5470'];
+  var bubs=E.map(function(x,k){var b=document.createElement('div');b.className='bub me ql';b.textContent=x.n.charAt(0);b.style.left=((x.p+.5)/3*100)+'%';b.style.top=((3-(x.i+.5))/3*100)+'%';b.hidden=true;g.appendChild(b);return b});
+  var box=$('#qlexp');
+  box.innerHTML=E.map(function(x,k){return '<button type="button" class="qle" data-k="'+k+'"><span class="av">'+x.n.charAt(0)+'</span><span><b>'+x.n+'</b><small>'+x.rol+'</small></span></button>'}).join('')+'<button type="button" class="qle all" data-k="all"><span class="av">+</span><span><b>Ver los tres</b><small>Comparar resultados</small></span></button>';
+  function pick(k){
+    $$('.qle',box).forEach(function(b){b.classList.toggle('on',b.dataset.k===String(k))});
+    var res=$('#qlres');
+    if(k==='all'){
+      bubs.forEach(function(b){b.hidden=false});
+      res.innerHTML='<p class="qlq">Mismo riesgo, mismos datos, tres resultados distintos.</p><div class="qlbadges">'+E.map(function(x){var sc=x.p+x.i;return '<div class="qlb" style="border-color:'+PC[sc]+';color:'+PC[sc]+'"><b>'+x.n.charAt(0)+'</b> '+PR[sc]+'</div>'}).join('')+'</div><p class="qln">Esa es la fortaleza y el límite del método: capta lo que aún no se puede medir, pero depende del juicio de quien evalúa.</p>';
+    }else{
+      var x=E[k],sc=x.p+x.i;
+      bubs.forEach(function(b,i){b.hidden=i!==+k});
+      res.innerHTML='<p class="qlq">'+x.q+'</p><div class="qlr"><span>Probabilidad <b>'+lv[x.p]+'</b></span><span>Impacto <b>'+li[x.i]+'</b></span></div><p class="qlbadge" style="background:'+PC[sc]+'">'+PR[sc]+'</p>';
+    }
+  }
+  box.addEventListener('click',function(e){var b=e.target.closest('.qle');if(b)pick(b.dataset.k)});
+  pick('0');
+})();
+
+/* ---------- CAP 4: Monte Carlo ---------- */
+(function(){
+  var N=2000,U=[],Z=[];
+  function seed(){U=[];Z=[];for(var i=0;i<N;i++){U.push(Math.random());var a=Math.random()||1e-9,b=Math.random();Z.push(Math.sqrt(-2*Math.log(a))*Math.cos(6.2832*b))}}
+  seed();
+  var hist=$('#hist'),bars=[];
+  for(var i=0;i<21;i++){var b=document.createElement('i');b.className='bar'+(i===0?' zero':'');hist.insertBefore(b,$('#vline'));bars.push(b)}
+  function sim(p,m,s){var L=new Float64Array(N);for(var i=0;i<N;i++)L[i]=U[i]<p?Math.min(200,Math.max(0,m+s*Z[i])):0;return L}
+  function stats(L){var s=Float64Array.from(L).sort(),sum=0,pos=0;for(var i=0;i<N;i++){sum+=L[i];if(L[i]>0)pos++}return {el:sum/N,p95:s[Math.floor(.95*N)],p99:s[Math.floor(.99*N)],pr:pos/N}}
+  function xp(L){return (L<=0?.5:1+L/10)/21*100}
+  var touched=false;
+  function touch(){if(!touched){touched=true;markDone($('#simp'))}}
+  function draw(){
+    var p=+$('#sp').value/100,m=+$('#sm').value,s=+$('#ss').value;
+    $('#op').textContent=fmt(p*100,0)+' %';$('#om').textContent=fmt(m,0)+' %';$('#os').textContent=fmt(s,0);
+    var L=sim(p,m,s),st=stats(L),cnt=new Array(21).fill(0);
+    for(var i=0;i<N;i++){var v=L[i];cnt[v<=0?0:Math.min(20,Math.ceil(v/10))]++}
+    var mx=Math.max.apply(null,cnt.slice(1).concat([1]));
+    bars.forEach(function(b,k){b.style.height=(k===0?100:Math.max(1.5,cnt[k]/mx*92))+'%';b.title=cnt[k]+' de '+N});
+    bars[0].dataset.l=fmt(cnt[0]/N*100,0)+'%';
+    $('#vline').style.left=xp(st.p95)+'%';$('#pline').style.left=xp(st.p99)+'%';
+    $('#kel').textContent=fmt(st.el);$('#kvar').textContent=fmt(st.p95,0)+' %';$('#kp99').textContent=fmt(st.p99,0)+' %';$('#kpr').textContent=fmt((1-st.pr)*100,0)+' de cada 100';
+    S.v95=st.p95;
+    $('#simread').innerHTML=st.p95>0?'':
+      'El techo razonable es <b>0</b> porque el descuento duro solo escala en '+fmt(p*100,0)+' de cada 100 futuros (menos de 5). <b>El riesgo no desapareció</b>: sigue en el peor caso ('+fmt(st.p99,0)+' % de las ventas de un año).';
+    cb();
+  }
+  ['sp','sm','ss'].forEach(function(id){$('#'+id).addEventListener('input',function(){touch();draw()})});
+  $('#resim').onclick=function(){seed();touch();draw()};
+
+  /* costo-beneficio */
+  var MIT=[
+   {id:'vig',t:'Vigilancia y analítica predictiva',cost:1.5,p:.85,m:.9,d:'Detecta antes: menos sorpresa y respuesta más temprana.'},
+   {id:'mp',t:'Marca propia de bajo costo',cost:3,p:1,m:.7,d:'Una oferta propia amortigua la pérdida de clientes sensibles al precio.'},
+   {id:'fmt',t:'Formato de proximidad propio',cost:6,p:.9,m:.55,d:'Compite en el mismo terreno: tienda pequeña de barrio.'}
+  ];
+  $('#mit').innerHTML=MIT.map(function(x){return '<label><input type="checkbox" data-id="'+x.id+'"'+(x.id==='vig'?' checked':'')+'><span><b>'+x.t+'</b><small>'+x.d+'</small></span><em>costo '+fmt(x.cost)+' %'+'</em></label>'}).join('');
+  $('#mit').addEventListener('change',function(){markDone($('#cbp'));draw()});
+  function cb(){
+    var p=+$('#sp').value/100,m=+$('#sm').value,s=+$('#ss').value,fp=1,fm=1,cost=0;
+    $$('#mit input').forEach(function(c){if(c.checked){var x=MIT.filter(function(y){return y.id===c.dataset.id})[0];fp*=x.p;fm*=x.m;cost+=x.cost}});
+    var base=stats(sim(p,m,s)).el,nw=stats(sim(p*fp,m*fm,s*fm)).el,ben=base-nw,net=ben-cost;
+    var mxv=Math.max(cost,ben,1);
+    $('#cbbars').innerHTML='<div class="cbbar c"><span>Lo que se gasta</span><div style="width:'+Math.max(2,cost/mxv*100)+'%"></div><b>'+fmt(cost)+' %</b></div><div class="cbbar n"><span>Lo que se evita perder</span><div style="width:'+Math.max(2,ben/mxv*100)+'%"></div><b>'+fmt(ben)+' %</b></div>';
+    var none=cost===0;
+    $('#cbverdict').className='cbverdict '+(none?'':(net>=0?'pos':'neg'));
+    $('#cbverdict').innerHTML=none?'Al marcar una estrategia se compara su costo con lo que evita.':
+      '<b>'+(net>=0?'Sí compensa.':'Todavía no compensa.')+'</b> La pérdida promedio baja de <b>'+fmt(base)+' %</b> a <b>'+fmt(nw)+' %</b> de las ventas de un año. Se gasta <b>'+fmt(cost)+' %</b> para evitar <b>'+fmt(ben)+' %</b>: '+(net>=0?'queda una ganancia de <b>+'+fmt(net)+' %</b>':'faltan <b>'+fmt(-net)+' %</b> para empatar')+'. Por cada 1 gastado se evitan <b>'+fmt(ben/cost,1)+'</b>.';
+  }
+  draw();
+})();
+
+/* ---------- CAP 5: cadena de suministro ---------- */
+(function(){
+  var mode='single',down={A:false,B:false,C:false},tried={single:false,div:false};
+  var SY={A:70,B:150,C:230},ST=[50,117,184,250],svg=$('#scsvg');
+  function calc(){
+    var base=mode==='single'?{A:100,B:0,C:0}:{A:50,B:30,C:20},any=down.A||down.B||down.C,cap=0;
+    ['A','B','C'].forEach(function(k){if(!down[k])cap+=base[k]*(mode==='div'&&any?1.4:1)});
+    cap=Math.min(100,cap);var svc=cap;
+    if(any&&$('#scCont').checked)svc=Math.min(100,svc+20);
+    return {base:base,svc:svc,any:any};
+  }
+  function col(v){return v>=90?'#5BF0A8':v>=50?'#FFC857':'#FF5470'}
+  function render(){
+    var c=calc(),h='';
+    ['A','B','C'].forEach(function(k){
+      var y=SY[k],sh=c.base[k],off=sh===0;
+      h+='<path class="fl'+(down[k]||off?' stop':'')+'" d="M92 '+y+' C200 '+y+' 230 150 330 150" stroke="'+(off?'transparent':'#3CC8FF')+'" stroke-width="'+(1+sh*.07)+'"/>';
+    });
+    for(var i=0;i<4;i++){var y=ST[i];h+='<path class="fl'+(c.svc<=0?' stop':'')+'" d="M390 150 C500 150 540 '+y+' 640 '+y+'" stroke="'+col(c.svc)+'" stroke-width="'+(.8+c.svc*.04)+'"/>'}
+    ['A','B','C'].forEach(function(k){
+      var y=SY[k],off=c.base[k]===0;
+      h+='<g class="sup'+(down[k]?' down':'')+(off?' off':'')+'" data-k="'+k+'" tabindex="'+(off?-1:0)+'" role="button" aria-label="Proveedor '+k+(down[k]?' interrumpido':'')+'"><circle class="pulse" cx="70" cy="'+y+'" r="22"/><text x="70" y="'+(y+4)+'" text-anchor="middle">'+(down[k]?'✕':k)+'</text><text class="lbl" x="70" y="'+(y+40)+'" text-anchor="middle">'+(off?'sin contrato':down[k]?'Prov. '+k+' · interrumpido':(mode==='div'&&c.any?'Prov. '+k+' · '+c.base[k]+' % → '+fmt(Math.min(100,c.base[k]*1.4),0)+' %':'Prov. '+k+' · surte '+c.base[k]+' %'))+'</text></g>';
+    });
+    h+='<rect x="330" y="128" width="60" height="44" rx="10" fill="#16246a" stroke="#3CC8FF" stroke-width="2"/><text x="360" y="154" text-anchor="middle">CEDI</text><text class="lbl" x="360" y="192" text-anchor="middle">centro de distribución</text>';
+    for(var j=0;j<4;j++){var yy=ST[j];h+='<rect x="640" y="'+(yy-16)+'" width="64" height="32" rx="6" fill="#0c1438" stroke="rgba(140,170,255,.4)"/><rect x="644" y="'+(yy-12)+'" width="'+(56*c.svc/100)+'" height="24" rx="4" fill="'+col(c.svc)+'" opacity=".85"/><text class="lbl" x="672" y="'+(yy+28)+'" text-anchor="middle">tienda '+(j+1)+'</text>'}
+    svg.innerHTML=h;
+    $('#scsvc').textContent=fmt(c.svc,0)+'%';$('#scgb').style.width=c.svc+'%';$('#scgb').style.background=col(c.svc);$('#scsvc').style.color=col(c.svc);$('#scrisk').textContent=fmt(100-c.svc,0)+'%';
+    var dn=['A','B','C'].filter(function(k){return down[k]}),names=dn.join(dn.length>2?', ':' y ');
+    var okn=['A','B','C'].filter(function(k){return !down[k]&&c.base[k]>0});
+    $('#scread').innerHTML=!c.any?(mode==='single'?'Un solo proveedor surte el <b>100 %</b> de lo que necesitan las tiendas.':'Cada proveedor surte una parte: A <b>50 %</b>, B <b>30 %</b>, C <b>20 %</b>.'):
+      (mode==='single'?'Falla el proveedor '+names+' y no hay quién lo reemplace: las tiendas reciben el <b>'+fmt(c.svc,0)+' %</b>.':
+       (dn.length>1?'Fallan los proveedores ':'Falla el proveedor ')+names+'. '+(okn.length?'Los que siguen activos suben su entrega usando capacidad de respaldo (hasta +40 % sobre lo habitual). ':'No queda ningún proveedor activo. ')+'Las tiendas reciben el <b>'+fmt(Math.min(100,c.svc-(($('#scCont').checked&&c.any)?20:0)),0)+' %</b> con proveedores'+($('#scCont').checked?' y <b>+20 %</b> por el plan de contingencia.':'.'));
+    if(c.any){tried[mode==='single'?'single':'div']=true;$('#st1').classList.toggle('ok',tried.single);$('#st2').classList.toggle('ok',tried.div);if(tried.single&&tried.div)markDone($('#scp'))}
+  }
+  svg.addEventListener('click',function(e){var g=e.target.closest('.sup');if(!g||g.classList.contains('off'))return;var k=g.dataset.k;down[k]=!down[k];render()});
+  svg.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){var g=e.target.closest('.sup');if(g&&!g.classList.contains('off')){e.preventDefault();down[g.dataset.k]=!down[g.dataset.k];render()}}});
+  function setMode(m){mode=m;$('#st1').classList.toggle('now',m==='single'&&!tried.single);$('#st2').classList.toggle('now',m==='div'&&!tried.div);down={A:false,B:false,C:false};$('#mSingle').classList.toggle('on',m==='single');$('#mDiv').classList.toggle('on',m==='div');render()}
+  $('#mSingle').onclick=function(){setMode('single')};$('#mDiv').onclick=function(){setMode('div')};
+  $('#scCont').onchange=render;
+  $('#scReset').onclick=function(){setMode(mode)};
+  render();
+})();
+
+/* ---------- CAP 6: carrera de decisión ---------- */
+(function(){
+  var raf=0,userRun=false,tm=0;
+  var HN=['Analista','Jefe','Director','Comité','Gerencia','Junta','Matriz'],AN=['Equipo','Líder'];
+  function cfg(){var n=+$('#rlv').value;return {n:n,d1:n*6,d2:4}}
+  function build(){
+    var c=cfg();$('#orlv').textContent=c.n;
+    function lane(id,names){$(id).innerHTML=names.map(function(nm,i){return '<div class="gate" style="left:'+((i+1)/(names.length+1)*100)+'%"><span>'+nm+'</span></div>'}).join('')+'<div class="tok"></div>'}
+    lane('#tr1',HN.slice(0,c.n));lane('#tr2',AN);
+    ['1','2'].forEach(function(k){$('#rs'+k).textContent='';$('#cn'+k).innerHTML='<b>0</b> tiendas del competidor'});
+  }
+  function run(){
+    cancelAnimationFrame(raf);build();var c=cfg(),t0=performance.now(),DAY=reduce?.001:.12;
+    function lane(tr,rs,cn,days,t){
+      var pos=Math.min(1,t/days),el=$(tr);$('.tok',el).style.left=(pos*100)+'%';
+      var gs=$$('.gate',el),n=gs.length;gs.forEach(function(g,i){g.classList.toggle('pass',pos>=(i+1)/(n+1))});
+      var d=Math.min(t,days),st=Math.floor(d/5);
+      $(cn).innerHTML='<b>'+st+'</b> '+(st===1?'tienda':'tiendas')+' del competidor';
+      $(rs).textContent=pos>=1?'Decidió en '+fmt(d,0)+' días':'Esperando aprobación… día '+fmt(d,0);
+    }
+    (function f(now){
+      var t=(now-t0)/1000/DAY;lane('#tr1','#rs1','#cn1',c.d1,t);lane('#tr2','#rs2','#cn2',c.d2,t);
+      if(t<Math.max(c.d1,c.d2)+.5){raf=requestAnimationFrame(f)}else{
+        S.days=c.d1-c.d2;var s1=Math.floor(c.d1/5),s2=Math.floor(c.d2/5);
+        $('#rread').innerHTML='El equipo empoderado decidió en <b>'+c.d2+' días</b> y el competidor alcanzó a abrir <b>'+s2+'</b> '+(s2===1?'tienda':'tiendas')+'. La jerarquía tardó <b>'+c.d1+' días</b>: el competidor abrió <b>'+s1+'</b>. Cada nivel de aprobación es terreno cedido (cifras ilustrativas).';
+        if(userRun)markDone($('#rcp'));
+      }
+    })(t0);
+  }
+  $('#rlv').addEventListener('input',function(){userRun=true;build();clearTimeout(tm);tm=setTimeout(run,350)});
+  $('#rgo').onclick=function(){userRun=true;run()};
+  build();
+  $('#rcp').addEventListener('reveal',function(){run()});
+})();
+
+/* ---------- CAP 7: presupuesto ---------- */
+(function(){
+  var L=[['vig','Vigilancia y analítica predictiva','Señales débiles, patrones y escenarios.'],['div','Diversificación de proveedores','Redundancia en la cadena de suministro.'],['aut','Automatización','Menos procesos manuales y más eficiencia.'],['con','Planes de contingencia y recuperación','Reanudar operaciones tras la interrupción.'],['inn','Innovación continua y alianzas','I+D, startups y nuevos modelos.']];
+  var W={tec:[.35,.02,.30,.08,.25],ope:[.05,.40,.15,.35,.05],mer:[.30,.15,.15,.10,.30]};
+  var SN={tec:'Tecnológico',ope:'Operativo',mer:'De mercado'};
+  var P={react:[5,15,5,60,15],antic:[25,15,20,15,25],zero:[0,0,0,0,0]};
+  var touches=0;
+  $('#blev').innerHTML=L.map(function(l,i){return '<div class="lev"><label for="lv'+i+'">'+l[1]+'<output id="ov'+i+'"></output></label><small>'+l[2]+'</small><input type="range" id="lv'+i+'" min="0" max="100" step="5" value="0" data-i="'+i+'"></div>'}).join('');
+  var CIRC=2*Math.PI*26;
+  $('#bshock').innerHTML=Object.keys(W).map(function(k){return '<div class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" class="rbg"/><circle cx="32" cy="32" r="26" class="rfg" id="mr'+k+'" transform="rotate(-90 32 32)" stroke-dasharray="'+CIRC+'" stroke-dashoffset="'+CIRC+'"/></svg><b id="sh'+k+'">0 %</b><small>Choque '+SN[k].toLowerCase()+'</small></div>'}).join('');
+  var BIG=2*Math.PI*66;$('#rfg').setAttribute('stroke-dasharray',BIG);
+  function vals(){return L.map(function(_,i){return +$('#lv'+i).value})}
+  function eff(a){return 1-Math.exp(-a/25)}
+  function calc(){
+    var v=vals(),sum=v.reduce(function(a,b){return a+b},0),r={},avg=0,weak=null;
+    Object.keys(W).forEach(function(k){var s=0;W[k].forEach(function(w,i){s+=w*eff(v[i])});r[k]=s;avg+=s/3;if(weak===null||s<r[weak])weak=k});
+    $('#bpts').innerHTML='Puntos por asignar: <b>'+(100-sum)+'</b> de 100';
+    v.forEach(function(x,i){$('#ov'+i).textContent=x+' pts'});
+    function colr(p){return p>=55?'#5BF0A8':p>=35?'#FFC857':'#FF5470'}
+    Object.keys(W).forEach(function(k){var p=r[k]*100;$('#sh'+k).textContent=fmt(p,0)+' %';var m=$('#mr'+k);m.style.strokeDashoffset=CIRC*(1-p/100);m.style.stroke=sum?colr(p):'#6C7AB8'});
+    var ap=avg*100;$('#rpct').textContent=fmt(ap,0)+'%';var rf=$('#rfg');rf.style.strokeDashoffset=BIG*(1-avg);rf.style.stroke=sum?colr(ap):'#6C7AB8';
+    if(sum===0){$('#bread').innerHTML='Todo está en cero. Se reparten los <b>100 puntos</b> entre las cinco palancas, o se prueba un escenario, y se ve cómo reacciona cada choque.'}
+    else{
+      var top=W[weak].map(function(w,i){return [w*(1-eff(v[i]))*(1/25)*Math.exp(-v[i]/25)>=0?w*Math.exp(-v[i]/25)/25:0,i]}).sort(function(a,b){return b[0]-a[0]})[0];
+      var big=v.indexOf(Math.max.apply(null,v));
+      $('#bread').innerHTML='El choque más débil es el <b>'+SN[weak].toLowerCase()+'</b> ('+fmt(r[weak]*100,0)+' %). Para reforzarlo, el siguiente punto rinde más en <b>'+L[top[1]][1].toLowerCase()+'</b>.'+(100-sum>0?' Aún quedan <b>'+(100-sum)+' puntos</b> por asignar.':' Su mayor apuesta es '+L[big][1].toLowerCase()+' ('+v[big]+' pts): los últimos puntos de una misma palanca rinden cada vez menos.');
+    }
+    S.res=avg;
+  }
+  $('#blev').addEventListener('input',function(e){
+    var t=e.target;if(!t.dataset.i)return;
+    var others=vals().reduce(function(a,b,i){return a+(i===+t.dataset.i?0:b)},0);
+    if(+t.value>100-others)t.value=100-others;
+    touches++;if(touches>=3)markDone($('#bdp'));calc();
+  });
+  $$('[data-preset]').forEach(function(b){b.onclick=function(){P[b.dataset.preset].forEach(function(x,i){$('#lv'+i).value=x});touches+=2;if(touches>=3&&b.dataset.preset!=='zero')markDone($('#bdp'));calc()}});
+  calc();
+})();
+
+/* ---------- CAP 8: evaluación final con calificación automática ---------- */
+(function(){
+  var Q=[
+   {t:'Señales débiles',q:'En 2009 aparece en el informe una tienda de descuento duro en Itagüí, sin impacto material. ¿Qué etapa del ciclo es y qué corresponde hacer?',o:['Señal débil: monitorear y registrar de forma sistemática.','Patrón emergente: invertir fuerte y experimentar a gran escala.','Disrupción consolidada: competir de inmediato o quedar desplazado.','Ruido de mercado: descartarla del registro de riesgos.'],e:'Una sola tienda es una señal débil. La respuesta recomendada es registrar y monitorear; invertir y experimentar corresponde al patrón emergente.'},
+   {t:'Tipos de riesgo',q:'El único proveedor de un insumo crítico de la marca propia entra en quiebra. ¿Qué tipo de riesgo de interrupción es?',o:['Operativo, por dependencia en la cadena de suministro.','Tecnológico, por obsolescencia.','De mercado, por cambio del consumidor.','Reputacional únicamente.'],e:'La falta de un proveedor clave puede paralizar la producción y la logística: es un riesgo operativo.'},
+   {t:'Priorización',q:'Un riesgo tiene alta probabilidad y alto impacto. ¿Qué hace el comité?',o:['Acción inmediata y más recursos para mitigarlo.','Lo revisa una vez al año.','Lo acepta sin acción para no gastar.','Espera a tener datos históricos exactos.'],e:'Los riesgos de alta probabilidad y alto impacto son los que requieren acción inmediata y mayor asignación de recursos.'},
+   {t:'Método cualitativo',q:'Un riesgo es emergente y aún no hay datos históricos para medirlo. ¿Qué método sirve primero?',o:['Evaluación cualitativa: juicio de expertos y matriz de probabilidad e impacto.','VaR calculado con series históricas.','Monte Carlo sin ningún supuesto previo.','No evaluarlo hasta que se materialice.'],e:'La cualitativa captura riesgos emergentes que todavía no pueden cuantificarse. Es subjetiva, por eso luego se complementa con la cuantitativa.'},
+   {t:'VaR',q:'La simulación arroja un VaR 95 % del 87 % de las ventas de un año. ¿Qué significa?',o:['Con 95 % de confianza, la pérdida no superaría ese 87 %.','Se perderá el 87 % en todos los escenarios.','Hay 95 % de probabilidad de perder el 87 %.','La pérdida promedio es exactamente 87 %.'],e:'El valor en riesgo es el umbral que la pérdida no supera con cierto nivel de confianza. No es la pérdida esperada ni un resultado seguro.'},
+   {t:'Costo-beneficio',q:'Una estrategia cuesta 3,0 % de las ventas y evita una pérdida de 6,3 %. ¿Cuál es el beneficio neto?',o:['+3,3 %: conviene implementarla.','+9,3 %.','−3,3 %: no conviene.','Cero: costo y beneficio se anulan.'],e:'Beneficio neto = pérdida evitada − costo = 6,3 − 3,0 = +3,3. Es el criterio para priorizar qué mitigar.'},
+   {t:'Cadena de suministro',q:'Con proveedor único, el proveedor A falla. ¿Qué medida estructural reduce más el impacto operativo?',o:['Diversificar proveedores con capacidad de respaldo.','Esperar a que se normalice.','Subir el precio de venta.','Reducir el surtido de todas las tiendas.'],e:'Diversificar proveedores es la estrategia de fondo. Un plan de contingencia ayuda, pero sin redundancia solo compra tiempo.'},
+   {t:'Agilidad',q:'¿Qué acelera más la respuesta de una organización a una señal del entorno?',o:['Descentralizar decisiones en equipos empoderados y apoyarse en datos en tiempo real.','Añadir niveles de aprobación para mayor control.','Concentrar toda decisión en la alta gerencia.','Esperar a que el mercado confirme la tendencia.'],e:'La agilidad exige decisiones rápidas, estructuras flexibles y equipos empoderados con datos en tiempo real.'},
+   {t:'Resiliencia',q:'Una organización resiliente, además de recuperarse de la disrupción:',o:['Aprende de ella, innova y emerge fortalecida.','Vuelve exactamente al estado anterior.','Recorta toda innovación para ahorrar.','Evita cualquier cambio en su portafolio.'],e:'La resiliencia es adaptarse, recuperarse y prosperar: aprender de la crisis e innovar durante ella.'},
+   {t:'Caso integrador',q:'Según el caso, ¿qué le faltó a Éxito frente a D1?',o:['Convertir las señales en un análisis de impacto y mitigar a tiempo, en lugar de reaccionar tarde.','Cerrar sus hipermercados en 2009.','Subir precios para proteger el margen.','Dejar de vigilar a la competencia.'],e:'Éxito detectó el cambio, pero no lo tradujo en un análisis de impacto real ni en una oportunidad propia de bajo costo.'}
+  ];
+  var body=$('#qzbody'),idx=0,ans=[];
+  function shuffle(a){a=a.slice();for(var k=a.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1)),t=a[k];a[k]=a[j];a[j]=t}return a}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+  function intro(){
+    body.innerHTML='<div class="qz-intro"><p class="kicker">Evaluación final</p><h3>Pónganse a prueba</h3><p class="muted">Diez preguntas que recorren todo el caso: desde detectar la señal hasta mitigar el riesgo.</p><div class="qz-chips"><span><b>'+Q.length+'</b> preguntas</span><span><b>1</b> oportunidad por pregunta</span><span>Nota sobre <b>5,0</b></span></div><button class="btn" id="qzgo" type="button">Comenzar</button></div>';
+    $('#qzgo').onclick=function(){idx=0;ans=[];ask()};
+  }
+  function ask(){
+    var q=Q[idx],opts=shuffle(q.o.map(function(t,k){return {t:t,c:k===0}})),L='ABCD';
+    body.innerHTML='<div class="qz-top"><span class="qz-tag">'+q.t+'</span><span>Pregunta '+(idx+1)+' de '+Q.length+'</span></div><div class="qz-bar"><i style="width:'+(idx/Q.length*100)+'%"></i></div><p class="qz-q">'+esc(q.q)+'</p><div class="opts qz-opts" id="qzo">'+opts.map(function(o,k){return '<button type="button" class="opt" data-c="'+(o.c?1:0)+'"><span class="k">'+L[k]+'</span><span>'+esc(o.t)+'</span></button>'}).join('')+'</div><div class="qz-foot"><div class="fb" id="qzfb" aria-live="polite"></div><button class="btn" id="qzn" type="button" hidden>'+(idx===Q.length-1?'Ver mi resultado':'Siguiente')+'</button></div>';
+    var done=false;
+    $('#qzo').onclick=function(e){
+      var b=e.target.closest('.opt');if(!b||done)return;done=true;
+      var ok=b.dataset.c==='1';ans[idx]={ok:ok,t:q.t};
+      $$('.opt',body).forEach(function(x){x.disabled=true;if(x.dataset.c==='1')x.classList.add('ok');else if(x===b)x.classList.add('bad')});
+      var f=$('#qzfb');f.className='fb show '+(ok?'ok':'bad');f.innerHTML='<strong>'+(ok?'Correcto. ':'No es esa. ')+'</strong>'+esc(q.e);
+      $('#qzn').hidden=false;$('#qzn').focus({preventScroll:true});
+    };
+    $('#qzn').onclick=function(){idx++;if(idx<Q.length)ask();else result()};
+  }
+  function result(){
+    var ok=ans.filter(function(a){return a.ok}).length,nota=ok/Q.length*5;
+    var lvl=nota>=4.5?'Comité anticipador':nota>=3.5?'Vigía atento':nota>=3?'En alerta':'Señal por repasar';
+    var msg=nota>=4.5?'Habrían visto venir a D1.':nota>=3.5?'Detectan la señal; afinen el análisis y la mitigación.':nota>=3?'Vieron parte del patrón. Conviene repasar los temas marcados.':'Como Éxito en 2009: la señal estaba ahí. Conviene repasar los temas marcados y reintentar.';
+    var C=2*Math.PI*70;
+    body.innerHTML='<div class="res"><div class="nota"><div class="ring"><svg viewBox="0 0 160 160"><circle class="tr" cx="80" cy="80" r="70"/><circle class="fg" id="qzfg" cx="80" cy="80" r="70" stroke-dasharray="'+C+'" stroke-dashoffset="'+C+'"/></svg><b>'+fmt(nota,1)+'<small>de 5,0</small></b></div>'+
+      '<div class="resx"><p class="kicker">Resultado</p><p class="lvl">'+lvl+'</p><p class="muted">'+ok+' de '+Q.length+' respuestas correctas. '+msg+'</p>'+
+      '<div class="rstats"><div><b>'+S.sc.ok+'/'+S.sc.total+'</b><small>aciertos en las pausas</small></div><div><b>'+Object.keys(S.unlocked).length+'/'+CKEYS.length+'</b><small>conceptos desbloqueados</small></div></div></div></div>'+
+      '<div class="rev">'+ans.map(function(a,i){return '<div class="'+(a.ok?'y':'n')+'"><b>'+(i+1)+'</b><span>'+a.t+'</span></div>'}).join('')+'</div>'+
+      '<div class="resfoot"><p class="refs">Referencia: Christensen, C. M. (1997). The innovator\'s dilemma. Harvard Business Review Press.</p><button class="btn" id="qzre" type="button">Reintentar</button></div></div>';
+    setTimeout(function(){var f=$('#qzfg');if(f)f.style.strokeDashoffset=C*(1-nota/5)},60);
+    $('#qzre').onclick=intro;
+  }
+  intro();
+})();
+
+/* ---------- init ---------- */
+renderConc();updScore();go(0);
+})();
+</script>
+
+</body></html>
